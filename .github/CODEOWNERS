@@ -1,0 +1,6 @@
+# Default reviewers for every change. main requires one approval, so without this
+# a PR opens with nobody asked to review.
+#
+# @amicusTimisoara/developers holds write on every repo in the org; membership is
+# kept in sync by ~/scripts/github-org-sync on the Pi.
+*   @amicusTimisoara/developers
