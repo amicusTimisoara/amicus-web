@@ -3,7 +3,7 @@
 // Dev: VITE_API_BASE is unset, so requests go to "/api/..." and Vite's proxy
 // (vite.config.ts) forwards them to the live backend — same-origin, no CORS.
 // Prod: set VITE_API_BASE to the deployed API root, e.g.
-//   VITE_API_BASE=https://thorsp.ddns.net/amicus
+//   VITE_API_BASE=https://thorsp.net/amicus
 // and requests go straight there.
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/api'
 

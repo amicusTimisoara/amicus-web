@@ -9,9 +9,12 @@ export default defineConfig({
     // In dev, /api/* is proxied to the live backend so the client can use
     // same-origin relative URLs (no CORS, no hardcoded host). Production points
     // VITE_API_BASE at the deployed API instead — see src/lib/api.ts.
+    //
+    // thorsp.net is a stand-in until AMiCUS has its own domain; when it does,
+    // only this target and VITE_API_BASE change — the app code does not.
     proxy: {
       '/api': {
-        target: 'https://thorsp.ddns.net/amicus',
+        target: 'https://thorsp.net/amicus',
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
