@@ -14,7 +14,7 @@ bun install
 bun dev            # http://localhost:5173
 ```
 
-In dev, `/api/*` is proxied to the live backend (`https://thorsp.ddns.net/amicus`)
+In dev, `/api/*` is proxied to the live backend (`https://thorsp.net/amicus`)
 by `vite.config.ts`, so the client uses same-origin relative URLs and there is no
 CORS to configure. Point it elsewhere by setting `VITE_API_BASE`.
 
