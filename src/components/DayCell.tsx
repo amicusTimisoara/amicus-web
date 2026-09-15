@@ -46,7 +46,6 @@ export function DayCell({
   marks,
   onSelect,
 }: DayCellProps) {
-  const hasSlots = marks.length > 0
   const shown = marks.slice(0, MAX_DOTS)
   const overflow = marks.length - shown.length
 
@@ -54,9 +53,12 @@ export function DayCell({
     <button
       type="button"
       onClick={onSelect}
-      disabled={!hasSlots}
+      // Every day of the month is selectable, including empty ones: the panel
+      // answering "nothing that day" is a real answer, and it is what lets this
+      // work as a plain calendar in a month with no meetings.
+      disabled={!inMonth}
       aria-current={isToday ? 'date' : undefined}
-      aria-pressed={hasSlots ? isSelected : undefined}
+      aria-pressed={inMonth ? isSelected : undefined}
       aria-label={summarise(day, marks)}
       className={cx(
         'flex h-14 flex-col items-center gap-1 rounded-md pt-2 transition-colors',
@@ -64,7 +66,7 @@ export function DayCell({
         !inMonth && 'opacity-35',
         isToday && !isSelected && 'bg-sunken',
         isSelected && 'border-2 border-line-strong bg-raised',
-        hasSlots ? 'cursor-pointer hover:bg-sunken' : 'cursor-default',
+        inMonth ? 'cursor-pointer hover:bg-sunken' : 'cursor-default',
       )}
     >
       <span className={cx('t-num', inMonth ? 'text-ink' : 'text-ink-muted')}>{day}</span>

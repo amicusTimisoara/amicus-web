@@ -24,12 +24,27 @@ function thisMonth(): YearMonth {
   return { year: now.getFullYear(), month: now.getMonth() + 1 }
 }
 
+/** Stable identity, so an empty month doesn't hand MonthGrid a new Map each render. */
+const NO_SLOTS: ReadonlyMap<string, DaySlot[]> = new Map()
+
+/**
+ * Used to mark "today" while no event is loaded. Matches `Event.TimeZoneId`'s
+ * own default, so the highlighted day doesn't jump once the board arrives.
+ */
+const DEFAULT_TIME_ZONE = 'Europe/Bucharest'
+
 export function AcasaPage() {
   const [month, setMonth] = useState<YearMonth>(thisMonth)
   const [params, setParams] = useSearchParams()
   const board = useMonthBoard(month)
 
   const selectedDay = params.get('zi')
+
+  // The grid draws from the month, not from the API, so these fall back rather
+  // than gating it — that is what keeps the calendar usable while loading, in a
+  // month with no event, and when the board request fails.
+  const byDay = board.status === 'ready' ? board.byDay : NO_SLOTS
+  const timeZone = board.status === 'ready' ? board.event.timeZoneId : DEFAULT_TIME_ZONE
 
   function selectDay(key: string | null) {
     const next = new URLSearchParams(params)
@@ -71,47 +86,57 @@ export function AcasaPage() {
               </div>
             </div>
 
-            {board.status === 'loading' && (
-              <p className="t-body text-ink-muted">Se încarcă întâlnirile…</p>
+            {/*
+              Signed out is the only state with no calendar — the board is
+              auth-gated server-side, so there is nothing to draw. Every other
+              state still renders the grid: the month itself needs no API data,
+              and a plain month calendar is useful even in a month with no
+              meetings booked yet.
+            */}
+            {board.status === 'unauthenticated' ? (
+              <SignInPrompt />
+            ) : (
+              <>
+                <MonthGrid
+                  month={month}
+                  byDay={byDay}
+                  timeZone={timeZone}
+                  selectedDay={selectedDay}
+                  onSelect={selectDay}
+                />
+
+                {board.status === 'loading' && (
+                  <p className="t-body-sm mt-4 text-ink-muted">Se încarcă întâlnirile…</p>
+                )}
+
+                {board.status === 'empty' && (
+                  <p className="t-body-sm mt-4 text-ink-muted">
+                    Nicio întâlnire programată în{' '}
+                    {monthLabel(month).toLocaleLowerCase('ro-RO')}.
+                  </p>
+                )}
+
+                {board.status === 'error' && (
+                  <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-line bg-raised p-4">
+                    <p className="t-body-sm m-0 flex-1 text-ink-muted">
+                      Nu am putut încărca întâlnirile: {board.message}
+                    </p>
+                    <Button variant="secondary" onClick={board.refresh}>
+                      Încearcă din nou
+                    </Button>
+                  </div>
+                )}
+
+                <Legend />
+              </>
             )}
-
-            {board.status === 'unauthenticated' && <SignInPrompt />}
-
-            {board.status === 'empty' && (
-              <p className="t-body text-ink-muted">
-                Nicio întâlnire programată în {monthLabel(month).toLocaleLowerCase('ro-RO')}.
-                Încearcă luna următoare.
-              </p>
-            )}
-
-            {board.status === 'error' && (
-              <div className="rounded-lg border border-line bg-raised p-4">
-                <p className="t-body m-0 text-ink">Nu am putut încărca calendarul.</p>
-                <p className="t-body-sm mt-1 mb-3 text-ink-muted">{board.message}</p>
-                <Button variant="secondary" onClick={board.refresh}>
-                  Încearcă din nou
-                </Button>
-              </div>
-            )}
-
-            {board.status === 'ready' && (
-              <MonthGrid
-                month={month}
-                byDay={board.byDay}
-                timeZone={board.event.timeZoneId}
-                selectedDay={selectedDay}
-                onSelect={selectDay}
-              />
-            )}
-
-            <Legend />
           </div>
 
-          {board.status === 'ready' && (
+          {board.status !== 'unauthenticated' && (
             <DayPanel
               dayKey={selectedDay}
-              slots={selectedDay ? (board.byDay.get(selectedDay) ?? []) : []}
-              timeZone={board.event.timeZoneId}
+              slots={selectedDay ? (byDay.get(selectedDay) ?? []) : []}
+              timeZone={timeZone}
               onBooked={board.refresh}
             />
           )}
@@ -126,7 +151,7 @@ function Hero() {
     <section className="flex flex-col gap-6 px-5 pt-6 pb-12 sm:px-12 lg:grid lg:grid-cols-[1fr_460px] lg:items-center lg:gap-16 lg:px-25 lg:pb-16">
       <div className="flex flex-col items-start gap-6">
         <span className="t-tag text-ink-muted">AMiCUS Timișoara</span>
-        <h1 className="t-hero m-0 text-ink">Biblioteca Vie</h1>
+        <h1 className="t-hero m-0 text-ink">The Human Library</h1>
         <p className="t-quote m-0 max-w-[36ch] text-ink-soft lg:hidden">
           „Împrumută oameni, nu cărți.”
         </p>
@@ -166,7 +191,7 @@ function SignInPrompt() {
 
 interface MonthGridProps {
   month: YearMonth
-  byDay: Map<string, DaySlot[]>
+  byDay: ReadonlyMap<string, DaySlot[]>
   timeZone: string
   selectedDay: string | null
   onSelect: (key: string) => void

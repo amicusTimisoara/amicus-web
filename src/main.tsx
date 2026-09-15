@@ -12,6 +12,7 @@ import { LoginPage } from './pages/LoginPage'
 import { ParolaUitataPage } from './pages/ParolaUitataPage'
 import { ResetareParolaPage } from './pages/ResetareParolaPage'
 import { RezervarilePage } from './pages/RezervarilePage'
+import { SetariPage } from './pages/SetariPage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -22,6 +23,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="carti" element={<CartiPage />} />
           <Route path="carti/:specialistId" element={<CartePage />} />
           <Route path="rezervarile-mele" element={<RezervarilePage />} />
+          <Route path="setari" element={<SetariPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="inregistrare" element={<InregistrarePage />} />
           <Route path="parola-uitata" element={<ParolaUitataPage />} />

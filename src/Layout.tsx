@@ -13,7 +13,7 @@ export function Layout() {
       <footer className="border-t border-line px-5 py-8 sm:px-12 lg:px-25">
         <p className="t-quote m-0 text-ink-soft">„Dincolo de etichete, există o poveste.”</p>
         <p className="t-body-sm mt-2 mb-0 text-ink-muted">
-          Biblioteca Vie · un proiect AMiCUS Timișoara
+          The Human Library · un proiect AMiCUS Timișoara
         </p>
       </footer>
     </div>

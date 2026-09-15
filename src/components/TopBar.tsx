@@ -1,6 +1,7 @@
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { auth } from '../lib/api'
 import { cx } from '../lib/cx'
+import { UserMenu } from './UserMenu'
 
 const LINKS = [
   { to: '/', label: 'Calendar', end: true },
@@ -8,7 +9,6 @@ const LINKS = [
 ]
 
 export function TopBar() {
-  const navigate = useNavigate()
   const signedIn = auth.token !== null
 
   return (
@@ -34,30 +34,13 @@ export function TopBar() {
           </NavLink>
         ))}
 
+        {/*
+          Everything account-shaped lives behind the avatar — bookings, settings
+          and sign-out. Keeping them in the header worked with two items and
+          would not survive a third.
+        */}
         {signedIn ? (
-          <>
-            <NavLink
-              to="/rezervarile-mele"
-              className={({ isActive }) =>
-                cx(
-                  't-label no-underline transition-colors hover:text-ink',
-                  isActive ? 'text-ink' : 'text-ink-soft',
-                )
-              }
-            >
-              Rezervările mele
-            </NavLink>
-            <button
-              type="button"
-              onClick={() => {
-                auth.clear()
-                navigate('/login')
-              }}
-              className="t-label hidden cursor-pointer text-ink-muted transition-colors hover:text-ink sm:inline"
-            >
-              Ieși
-            </button>
-          </>
+          <UserMenu />
         ) : (
           <Link to="/login" className="t-label text-ink no-underline">
             Intră în cont
