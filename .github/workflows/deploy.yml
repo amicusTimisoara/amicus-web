@@ -1,9 +1,21 @@
 name: Deploy to Cloudflare Pages
 
 on:
+  # Merge to main -> STAGING (staging.amicus-web.pages.dev, talks to the stage API).
   push:
     branches: [main]
+  # A published Release -> PRODUCTION (app.thorsp.net, talks to the prod API).
+  release:
+    types: [published]
+  # PRs get their own preview URL, also pointed at the stage API.
   pull_request:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Which environment to deploy
+        type: choice
+        options: [staging, production]
+        default: staging
 
 permissions:
   contents: read
@@ -21,25 +33,36 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      # main build talks to the prod API; a PR preview talks to stage, so a
-      # preview can never mutate production data.
+      # Decide the target once. Release (or a manual production run) is the only
+      # thing that touches prod; everything else is staging/preview on the stage API.
+      - name: Resolve target
+        id: t
+        run: |
+          if [ "${{ github.event_name }}" = "release" ] || [ "${{ inputs.environment }}" = "production" ]; then
+            echo "branch=production"        >> "$GITHUB_OUTPUT"
+            echo "api=https://api.thorsp.net" >> "$GITHUB_OUTPUT"
+            echo "google=695044425932-id1oe3r50825d02o4pjrijeuj3fc6qma.apps.googleusercontent.com" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "branch=${{ github.head_ref }}" >> "$GITHUB_OUTPUT"
+            echo "api=https://stage.thorsp.net"  >> "$GITHUB_OUTPUT"
+            echo "google=" >> "$GITHUB_OUTPUT"
+          else
+            echo "branch=staging"                >> "$GITHUB_OUTPUT"
+            echo "api=https://stage.thorsp.net"   >> "$GITHUB_OUTPUT"
+            echo "google=" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Only app.thorsp.net / amicus-web.pages.dev are allow-listed on the OAuth
+      # client, so the Google button ships on production only.
       - name: Build
         run: bun run build
         env:
-          VITE_API_BASE: ${{ github.ref == 'refs/heads/main' && 'https://api.thorsp.net' || 'https://stage.thorsp.net' }}
-          # Only the production origin (app.thorsp.net / amicus-web.pages.dev) is
-          # allow-listed on the OAuth client, so the Google button is shown on the
-          # main build only; preview builds omit the id and render email+password.
-          VITE_GOOGLE_CLIENT_ID: ${{ github.ref == 'refs/heads/main' && '695044425932-id1oe3r50825d02o4pjrijeuj3fc6qma.apps.googleusercontent.com' || '' }}
+          VITE_API_BASE: ${{ steps.t.outputs.api }}
+          VITE_GOOGLE_CLIENT_ID: ${{ steps.t.outputs.google }}
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # A push to main becomes a production deploy; a PR builds a preview URL
-          # on its own branch. wrangler prints the preview URL in the job log.
-          command: >-
-            pages deploy dist
-            --project-name=amicus-web
-            --branch=${{ github.head_ref || github.ref_name }}
+          command: pages deploy dist --project-name=amicus-web --branch=${{ steps.t.outputs.branch }}
