@@ -196,6 +196,26 @@ export const api = {
       body: JSON.stringify({ email, password }),
     }),
 
+  /** Sends a password-reset email. Always 200, even for an unknown address. */
+  forgotPassword: (email: string) =>
+    request<void>('/auth/forgotPassword', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
+  /** Completes a reset with the code from the email link. */
+  resetPassword: (email: string, resetCode: string, newPassword: string) =>
+    request<void>('/auth/resetPassword', {
+      method: 'POST',
+      body: JSON.stringify({ email, resetCode, newPassword }),
+    }),
+
+  /** Confirms an email address from the link's userId + code (a GET endpoint). */
+  confirmEmail: (userId: string, code: string) => {
+    const query = new URLSearchParams({ userId, code })
+    return request<string>(`/auth/confirmEmail?${query}`)
+  },
+
   loginWithPassword: (email: string, password: string) =>
     request<AccessTokenResponse>('/auth/login', {
       method: 'POST',

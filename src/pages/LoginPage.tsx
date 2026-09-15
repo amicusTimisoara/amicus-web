@@ -68,6 +68,9 @@ export function LoginPage() {
         <Button type="submit" fullWidth disabled={busy}>
           {busy ? 'Se conectează…' : 'Intră în cont'}
         </Button>
+        <Link to="/parola-uitata" className="t-body -mt-2 text-ink-soft underline">
+          Ai uitat parola?
+        </Link>
       </form>
 
       <p className="t-body-sm mt-8 border-t border-line pt-6 text-center text-ink-muted">
