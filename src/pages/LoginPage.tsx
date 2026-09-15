@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '../components/Button'
+import { GoogleButton } from '../components/GoogleButton'
 import { ApiError, api, auth } from '../lib/api'
 
 export function LoginPage() {
@@ -72,6 +73,16 @@ export function LoginPage() {
           Ai uitat parola?
         </Link>
       </form>
+
+      <div className="mt-6 flex items-center gap-3">
+        <span className="h-px flex-1 bg-line" />
+        <span className="t-body-sm text-ink-muted">sau</span>
+        <span className="h-px flex-1 bg-line" />
+      </div>
+      <div className="mt-6">
+        <GoogleButton />
+      </div>
+
 
       <p className="t-body-sm mt-8 border-t border-line pt-6 text-center text-ink-muted">
         Nu ai cont?{' '}
