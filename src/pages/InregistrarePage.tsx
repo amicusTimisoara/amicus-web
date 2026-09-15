@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '../components/Button'
+import { GoogleButton } from '../components/GoogleButton'
 import { PASSWORD_MIN_LENGTH, api, auth, registerErrorMessage } from '../lib/api'
 import { cx } from '../lib/cx'
 
@@ -113,6 +114,16 @@ export function InregistrarePage() {
           {busy ? 'Se creează contul…' : 'Creează cont'}
         </Button>
       </form>
+
+      <div className="mt-6 flex items-center gap-3">
+        <span className="h-px flex-1 bg-line" />
+        <span className="t-body-sm text-ink-muted">sau</span>
+        <span className="h-px flex-1 bg-line" />
+      </div>
+      <div className="mt-6">
+        <GoogleButton />
+      </div>
+
 
       <p className="t-body-sm mt-8 border-t border-line pt-6 text-center text-ink-muted">
         Ai deja cont?{' '}
