@@ -36,10 +36,19 @@ export const auth = {
 export class ApiError extends Error {
   readonly status: number
 
-  constructor(status: number, message: string) {
+  /**
+   * Identity's validation codes, when the response carried an `errors` map —
+   * e.g. `["PasswordTooShort"]`, `["DuplicateEmail"]`. The human-readable
+   * strings beside them are English and aimed at developers, so we key our own
+   * Romanian wording off these codes instead of showing the server's text.
+   */
+  readonly codes: readonly string[]
+
+  constructor(status: number, message: string, codes: readonly string[] = []) {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.codes = codes
   }
 }
 
@@ -56,17 +65,26 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!res.ok) {
     // Bubble up a typed error so callers can branch on 401 (re-auth) vs the rest.
     let detail = res.statusText
+    let codes: string[] = []
     try {
       const body = await res.json()
       detail = body.error ?? body.title ?? detail
+      if (body.errors && typeof body.errors === 'object' && !Array.isArray(body.errors)) {
+        codes = Object.keys(body.errors)
+      }
     } catch {
       /* non-JSON error body */
     }
-    throw new ApiError(res.status, detail)
+    throw new ApiError(res.status, detail, codes)
   }
 
+  // Not every success carries a body: 204 from cancel, but ALSO 200 with an
+  // empty body from Identity's /register. Calling res.json() on those throws a
+  // SyntaxError that looks nothing like an API failure, so read the text first
+  // and only parse when there is something to parse.
   if (res.status === 204) return undefined as T
-  return res.json() as Promise<T>
+  const text = await res.text()
+  return (text ? JSON.parse(text) : undefined) as T
 }
 
 // --- shapes mirrored from the backend's Contracts.cs (kept deliberately small;
@@ -86,9 +104,97 @@ export interface AccessTokenResponse {
   expiresIn: number
 }
 
+export interface SpecialistSummary {
+  eventSpecialistId: string
+  specialistId: string
+  fullName: string
+  specialty: string
+  bio: string | null
+  location: string | null
+}
+
+export interface EventDetail {
+  event: EventSummary
+  specialists: SpecialistSummary[]
+}
+
+/**
+ * One cell of the shared board. Note what is absent: there is no field for WHO
+ * holds a slot. The board is visible to every student and some books are
+ * physicians or lawyers, so the server only ever reveals that a slot is taken —
+ * and `isMine`, which the caller is entitled to know. Don't add a holder field
+ * to this type hoping the server will fill it; it won't.
+ */
+export interface BoardSlot {
+  id: string
+  startsAt: string
+  endsAt: string
+  isAvailable: boolean
+  isMine: boolean
+}
+
+export interface SpecialistBoard {
+  specialist: SpecialistSummary
+  slots: BoardSlot[]
+}
+
+export type BookingStatus = 'Booked' | 'Cancelled' | 'CheckedIn' | 'Completed' | 'NoShow'
+
+export interface BookingDetail {
+  id: string
+  slotId: string
+  startsAt: string
+  endsAt: string
+  status: BookingStatus
+  topic: string | null
+  /** Crockford base32, 10 chars — safe to read aloud when a camera fails. */
+  checkInCode: string
+  eventSlug: string
+  eventName: string
+  specialistName: string
+  specialty: string
+  location: string | null
+}
+
 export const api = {
   health: () => request<string>('/health'),
   events: () => request<EventSummary[]>('/events'),
+  event: (slug: string) => request<EventDetail>(`/events/${encodeURIComponent(slug)}`),
+
+  /**
+   * The shared slot board. `from`/`to` are inclusive `YYYY-MM-DD` days.
+   *
+   * Always pass a range. A whole multi-week event is a genuinely large response
+   * — the backend measured 2016 slots at a 305 MB peak versus 252 MB for a
+   * single week — and the endpoint's own docs ask clients to narrow it.
+   */
+  board: (slug: string, from: string, to: string) => {
+    const query = new URLSearchParams({ from, to })
+    return request<SpecialistBoard[]>(
+      `/events/${encodeURIComponent(slug)}/board?${query}`,
+    )
+  },
+
+  createBooking: (slotId: string, topic?: string) =>
+    request<BookingDetail>('/bookings', {
+      method: 'POST',
+      body: JSON.stringify({ slotId, topic: topic?.trim() || null }),
+    }),
+
+  myBookings: () => request<BookingDetail[]>('/bookings/mine'),
+
+  cancelBooking: (id: string) =>
+    request<void>(`/bookings/${encodeURIComponent(id)}/cancel`, { method: 'POST' }),
+
+  /**
+   * Creates an account. Identity answers 200 with an EMPTY body — no token — so
+   * a caller that wants the student signed in has to log in straight after.
+   */
+  register: (email: string, password: string) =>
+    request<void>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }),
 
   loginWithPassword: (email: string, password: string) =>
     request<AccessTokenResponse>('/auth/login', {
@@ -103,4 +209,77 @@ export const api = {
     }),
 
   me: () => request<{ email: string; isEmailConfirmed: boolean }>('/auth/manage/info'),
+}
+
+/** Minimum password length, mirroring `IdentitySetup.cs`. */
+export const PASSWORD_MIN_LENGTH = 10
+
+/**
+ * Turns a failed registration into Romanian a student can act on.
+ *
+ * Keyed off Identity's stable error codes rather than its English messages, and
+ * deliberately says which field is wrong — "datele sunt greșite" would leave
+ * someone re-typing a perfectly good email because their password was short.
+ */
+export function registerErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) {
+    return 'Nu am putut crea contul. Verifică legătura la internet și încearcă din nou.'
+  }
+
+  const has = (code: string) => error.codes.some((c) => c.startsWith(code))
+
+  if (has('DuplicateUserName') || has('DuplicateEmail')) {
+    return 'Există deja un cont cu acest email. Încearcă să intri în cont.'
+  }
+  if (has('InvalidEmail')) {
+    return 'Adresa de email nu pare validă.'
+  }
+  if (has('PasswordTooShort')) {
+    return `Parola trebuie să aibă cel puțin ${PASSWORD_MIN_LENGTH} caractere.`
+  }
+  if (has('PasswordRequiresLower')) {
+    return 'Parola trebuie să conțină și litere mici.'
+  }
+  if (has('PasswordRequiresUniqueChars')) {
+    return 'Parola trebuie să conțină caractere diferite.'
+  }
+  if (has('Password')) {
+    return 'Parola nu îndeplinește cerințele.'
+  }
+  return 'Nu am putut crea contul. Încearcă din nou.'
+}
+
+/**
+ * Turns a failed booking into something a student can act on.
+ *
+ * The server distinguishes four ways a booking can fail and says which in the
+ * error body; collapsing them into one "ceva n-a mers" would throw away the only
+ * part that tells the student what to do next.
+ */
+export function bookingErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) {
+    return 'Nu am putut face rezervarea. Verifică legătura la internet și încearcă din nou.'
+  }
+
+  const detail = error.message.toLowerCase()
+
+  if (error.status === 409 && detail.includes('just took')) {
+    return 'Cineva tocmai a luat locul acesta. Alege altul.'
+  }
+  if (error.status === 409 && detail.includes('overlap')) {
+    return 'Ai deja o rezervare care se suprapune cu acest interval.'
+  }
+  if (error.status === 400 && detail.includes('already started')) {
+    return 'Întâlnirea a început deja. Alege un alt interval.'
+  }
+  if (error.status === 409) {
+    return 'Locul acesta nu mai este disponibil.'
+  }
+  if (error.status === 401) {
+    return 'Trebuie să fii autentificat ca să rezervi un loc.'
+  }
+  if (error.status === 404) {
+    return 'Locul acesta nu mai există.'
+  }
+  return 'Nu am putut face rezervarea. Încearcă din nou.'
 }
