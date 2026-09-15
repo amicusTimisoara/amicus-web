@@ -75,8 +75,13 @@ export const CATEGORY_CLASS: Record<
   },
 }
 
-/** Longest-intent-first: `medic` must be tested before a looser `med` would be. */
+/**
+ * Order matters: the first match wins, so more specific phrases come first.
+ * "Asistent social" must be tested before the bare `asistent` that means a
+ * medical assistant, or social workers silently become medics.
+ */
 const RULES: ReadonlyArray<readonly [Category, readonly string[]]> = [
+  ['social', ['asistent social', 'lucrator social', 'lucrător social', 'voluntar', 'ong']],
   ['spiritual', ['pastor', 'spiritual', 'teolog', 'capelan', 'duhovnic', 'credin']],
   ['medical', ['medic', 'doctor', 'asistent', 'psiholog', 'psihiatru', 'terapeut', 'sanatate', 'sănătate']],
   ['juridic', ['avocat', 'jurist', 'juridic', 'drept', 'notar', 'procuror']],
