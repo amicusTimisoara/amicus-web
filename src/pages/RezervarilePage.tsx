@@ -69,8 +69,11 @@ export function RezervarilePage() {
           <p className="t-body m-0 text-ink-soft">
             Intră în cont ca să vezi rezervările tale.
           </p>
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             <ButtonLink to="/login">Intră în cont</ButtonLink>
+            <ButtonLink to="/inregistrare" variant="ghost">
+              Creează cont
+            </ButtonLink>
           </div>
         </div>
       )}

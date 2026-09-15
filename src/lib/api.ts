@@ -36,10 +36,19 @@ export const auth = {
 export class ApiError extends Error {
   readonly status: number
 
-  constructor(status: number, message: string) {
+  /**
+   * Identity's validation codes, when the response carried an `errors` map —
+   * e.g. `["PasswordTooShort"]`, `["DuplicateEmail"]`. The human-readable
+   * strings beside them are English and aimed at developers, so we key our own
+   * Romanian wording off these codes instead of showing the server's text.
+   */
+  readonly codes: readonly string[]
+
+  constructor(status: number, message: string, codes: readonly string[] = []) {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.codes = codes
   }
 }
 
@@ -56,17 +65,26 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!res.ok) {
     // Bubble up a typed error so callers can branch on 401 (re-auth) vs the rest.
     let detail = res.statusText
+    let codes: string[] = []
     try {
       const body = await res.json()
       detail = body.error ?? body.title ?? detail
+      if (body.errors && typeof body.errors === 'object' && !Array.isArray(body.errors)) {
+        codes = Object.keys(body.errors)
+      }
     } catch {
       /* non-JSON error body */
     }
-    throw new ApiError(res.status, detail)
+    throw new ApiError(res.status, detail, codes)
   }
 
+  // Not every success carries a body: 204 from cancel, but ALSO 200 with an
+  // empty body from Identity's /register. Calling res.json() on those throws a
+  // SyntaxError that looks nothing like an API failure, so read the text first
+  // and only parse when there is something to parse.
   if (res.status === 204) return undefined as T
-  return res.json() as Promise<T>
+  const text = await res.text()
+  return (text ? JSON.parse(text) : undefined) as T
 }
 
 // --- shapes mirrored from the backend's Contracts.cs (kept deliberately small;
@@ -168,6 +186,16 @@ export const api = {
   cancelBooking: (id: string) =>
     request<void>(`/bookings/${encodeURIComponent(id)}/cancel`, { method: 'POST' }),
 
+  /**
+   * Creates an account. Identity answers 200 with an EMPTY body — no token — so
+   * a caller that wants the student signed in has to log in straight after.
+   */
+  register: (email: string, password: string) =>
+    request<void>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }),
+
   loginWithPassword: (email: string, password: string) =>
     request<AccessTokenResponse>('/auth/login', {
       method: 'POST',
@@ -181,6 +209,44 @@ export const api = {
     }),
 
   me: () => request<{ email: string; isEmailConfirmed: boolean }>('/auth/manage/info'),
+}
+
+/** Minimum password length, mirroring `IdentitySetup.cs`. */
+export const PASSWORD_MIN_LENGTH = 10
+
+/**
+ * Turns a failed registration into Romanian a student can act on.
+ *
+ * Keyed off Identity's stable error codes rather than its English messages, and
+ * deliberately says which field is wrong — "datele sunt greșite" would leave
+ * someone re-typing a perfectly good email because their password was short.
+ */
+export function registerErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) {
+    return 'Nu am putut crea contul. Verifică legătura la internet și încearcă din nou.'
+  }
+
+  const has = (code: string) => error.codes.some((c) => c.startsWith(code))
+
+  if (has('DuplicateUserName') || has('DuplicateEmail')) {
+    return 'Există deja un cont cu acest email. Încearcă să intri în cont.'
+  }
+  if (has('InvalidEmail')) {
+    return 'Adresa de email nu pare validă.'
+  }
+  if (has('PasswordTooShort')) {
+    return `Parola trebuie să aibă cel puțin ${PASSWORD_MIN_LENGTH} caractere.`
+  }
+  if (has('PasswordRequiresLower')) {
+    return 'Parola trebuie să conțină și litere mici.'
+  }
+  if (has('PasswordRequiresUniqueChars')) {
+    return 'Parola trebuie să conțină caractere diferite.'
+  }
+  if (has('Password')) {
+    return 'Parola nu îndeplinește cerințele.'
+  }
+  return 'Nu am putut crea contul. Încearcă din nou.'
 }
 
 /**

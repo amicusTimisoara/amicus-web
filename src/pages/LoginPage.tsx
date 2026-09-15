@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '../components/Button'
 import { ApiError, api, auth } from '../lib/api'
 
@@ -70,10 +70,17 @@ export function LoginPage() {
         </Button>
       </form>
 
+      <p className="t-body-sm mt-8 border-t border-line pt-6 text-center text-ink-muted">
+        Nu ai cont?{' '}
+        <Link to="/inregistrare" className="text-ink">
+          Creează-ți unul
+        </Link>
+      </p>
+
       {/* Google sign-in: the backend verifies a Google ID token at POST /auth/google.
           Wiring the button needs the Google Identity Services SDK plus the OAuth
           client's web origin allow-listed in Google Cloud — still a follow-up. */}
-      <p className="t-body-sm mt-8 border-t border-line pt-6 text-center text-ink-muted">
+      <p className="t-body-sm mt-4 text-center text-ink-muted">
         Autentificarea cu Google vine în curând
       </p>
     </section>

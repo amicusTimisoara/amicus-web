@@ -6,6 +6,7 @@ import { Layout } from './Layout'
 import { AcasaPage } from './pages/AcasaPage'
 import { CartePage } from './pages/CartePage'
 import { CartiPage } from './pages/CartiPage'
+import { InregistrarePage } from './pages/InregistrarePage'
 import { LoginPage } from './pages/LoginPage'
 import { RezervarilePage } from './pages/RezervarilePage'
 
@@ -19,6 +20,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="carti/:specialistId" element={<CartePage />} />
           <Route path="rezervarile-mele" element={<RezervarilePage />} />
           <Route path="login" element={<LoginPage />} />
+          <Route path="inregistrare" element={<InregistrarePage />} />
         </Route>
       </Routes>
     </BrowserRouter>
