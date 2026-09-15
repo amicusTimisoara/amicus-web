@@ -1,1 +1,186 @@
 @import "tailwindcss";
+
+/* Self-hosted — Google's font CDN is not reachable from every network we dev on. */
+@import "@fontsource-variable/literata";
+@import "@fontsource-variable/inter";
+
+/*
+ * Design tokens, generated from the Figma file `p73i11FYLFemCuTXWnBMxf`.
+ *
+ * Tailwind v4 turns every `--color-*` entry here into utilities automatically,
+ * so `--color-cat-medical` gives `bg-cat-medical`, `text-cat-medical`,
+ * `border-cat-medical`. Names are shortened from their Figma counterparts so the
+ * utilities read well in JSX; the Figma variable each one mirrors is noted beside
+ * it, which is the only link between the two — keep it accurate.
+ */
+@theme {
+  /* --- primitives (raw values; prefer the semantic tokens below) --- */
+  --color-paper-50: #faf7f2;
+  --color-paper-100: #f3ede4;
+  --color-paper-200: #e8e1d7;
+  --color-ink-900: #1f1b16;
+  --color-ink-700: #4a423a;
+  --color-ink-500: #7a6f63;
+  --color-ink-300: #c9bfb2;
+  --color-ink-100: #e6ded3;
+
+  /* --- surfaces --- */
+  --color-page: var(--color-paper-50); /* color/surface/page */
+  --color-raised: #ffffff; /* color/surface/raised */
+  --color-sunken: var(--color-paper-100); /* color/surface/sunken */
+  --color-inverse: var(--color-ink-900); /* color/surface/inverse */
+
+  /* --- text --- */
+  --color-ink: var(--color-ink-900); /* color/text/primary */
+  --color-ink-soft: var(--color-ink-700); /* color/text/secondary */
+  --color-ink-muted: var(--color-ink-500); /* color/text/muted */
+  --color-on-inverse: #ffffff; /* color/text/inverse */
+
+  /* --- lines --- */
+  --color-line: var(--color-ink-100); /* color/border/subtle */
+  --color-line-mid: var(--color-ink-300); /* color/border/default */
+  --color-line-strong: var(--color-ink-700); /* color/border/strong */
+
+  /* --- state --- */
+  --color-liber: #15803d; /* color/state/success */
+  --color-danger: #b91c1c; /* color/state/danger */
+
+  /*
+   * Book categories. Hue carries WHICH kind of book; free vs taken is carried by
+   * hollow vs solid, never by hue — see <Dot>. Green is deliberately absent here:
+   * in a booking UI it reads as "available", which would fight that split.
+   */
+  --color-cat-spiritual: #6d4aff;
+  --color-cat-spiritual-soft: #eae4ff;
+  --color-cat-mentorat: #0f766e;
+  --color-cat-mentorat-soft: #d4efec;
+  --color-cat-medical: #ea580c;
+  --color-cat-medical-soft: #fae2d5;
+  --color-cat-juridic: #1d4ed8;
+  --color-cat-juridic-soft: #dde5fd;
+  --color-cat-cariera: #9d174d;
+  --color-cat-cariera-soft: #fadce7;
+  --color-cat-social: #475569;
+  --color-cat-social-soft: #e2e6ec;
+
+  /* --- radii --- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  /* --- type families --- */
+  --font-serif: "Literata Variable", Literata, Georgia, "Times New Roman", serif;
+  --font-sans: "Inter Variable", Inter, system-ui, -apple-system, sans-serif;
+}
+
+/*
+ * Type ramp — one class per Figma text style. `.t-hero` is the single place the
+ * mobile/desktop size split lives, so headings scale without every component
+ * repeating a breakpoint.
+ */
+@layer components {
+  .t-hero {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 34px;
+    line-height: 42px;
+    letter-spacing: -0.015em;
+  }
+  @media (width >= 48rem) {
+    .t-hero {
+      font-size: 54px;
+      line-height: 62px;
+      letter-spacing: -0.02em;
+    }
+  }
+
+  .t-h1 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 26px;
+    line-height: 33px;
+    letter-spacing: -0.01em;
+  }
+  .t-h2 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 27px;
+    letter-spacing: -0.005em;
+  }
+  .t-h3 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 17px;
+    line-height: 24px;
+  }
+  .t-quote {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 19px;
+    line-height: 29px;
+  }
+
+  .t-body-lg {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 26px;
+  }
+  .t-body {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 23px;
+  }
+  .t-body-sm {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 20px;
+  }
+
+  .t-label {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 20px;
+  }
+  .t-label-sm {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 16px;
+  }
+  .t-num {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 15px;
+    line-height: 20px;
+    font-variant-numeric: tabular-nums;
+  }
+  .t-tag {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 11px;
+    line-height: 14px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+}
+
+html {
+  background: var(--color-page);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Keyboard focus stays visible everywhere; pointer clicks stay quiet. */
+:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
