@@ -47,6 +47,22 @@ the button needs the Google Identity Services SDK plus the web origin allow-list
 on the OAuth client in Google Cloud. The API client method (`api.loginWithGoogle`)
 is in place; the UI is a placeholder.
 
+## Deployment (Cloudflare Pages)
+
+Symmetric with the API — **main → staging, Release → production** — via
+`.github/workflows/deploy.yml`:
+
+| env | trigger | URL | talks to |
+|---|---|---|---|
+| **production** | a published GitHub **Release** (or manual) | `app.thorsp.net` | `api.thorsp.net` |
+| **staging** | push to `main` (or manual) | `staging.amicus-web.pages.dev` | `stage.thorsp.net` |
+| **preview** | every PR | `<branch>.amicus-web.pages.dev` | `stage.thorsp.net` |
+
+So a merged PR lands on **staging** (against the stage API); when it looks good,
+cut a **Release** to promote to **production**. The Google button ships on
+production only (only its origins are allow-listed on the OAuth client). Needs the
+`CLOUDFLARE_API_TOKEN` (user-scoped, Pages Edit) + `CLOUDFLARE_ACCOUNT_ID` secrets.
+
 ## Contributing
 
 `main` is protected: open a PR, get one approval, merge with **squash** (the only
