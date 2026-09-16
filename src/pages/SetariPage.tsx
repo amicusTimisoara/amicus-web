@@ -197,6 +197,11 @@ function DevinoCarte() {
         <p className="t-body-sm mt-1 text-ink-muted">
           Publică intervalele în care ești disponibilă în luna aceasta.
         </p>
+        <div className="mt-4">
+          <ButtonLink to="/cartea-mea" variant="ghost" fullWidth>
+            Disponibilitatea mea
+          </ButtonLink>
+        </div>
       </div>
     )
   }
