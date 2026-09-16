@@ -83,6 +83,94 @@
 }
 
 /*
+ * Dark theme.
+ *
+ * It overrides the TOKENS, not the components — so every existing `bg-page`,
+ * `text-ink`, `border-line` themes itself and not a single component needs a
+ * `dark:` variant. That is what the semantic layer above was for.
+ *
+ * The neutrals stay warm rather than turning cold grey: the light theme is paper
+ * and ink, and a grey dark theme reads as a different product. The category hues
+ * are LIGHTENED rather than reused — the light values were chosen for contrast
+ * against paper and go muddy on a dark ground.
+ *
+ * Two selectors, deliberately. The media query covers "follow the system", and
+ * is disabled by an explicit `light` choice. The attribute rule covers an
+ * explicit `dark` choice and wins in both directions.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --color-page: #17140f;
+    --color-raised: #201c16;
+    --color-sunken: #2a251e;
+    --color-inverse: #f3ede4;
+
+    --color-ink: #f3ede4;
+    --color-ink-soft: #c9bfb2;
+    --color-ink-muted: #948a7c;
+    --color-on-inverse: #1f1b16;
+
+    --color-line: #322c24;
+    --color-line-mid: #4a423a;
+    --color-line-strong: #c9bfb2;
+
+    --color-liber: #4ade80;
+    --color-danger: #f87171;
+    --color-brand: #f2454a;
+
+    --color-cat-spiritual: #a78bfa;
+    --color-cat-spiritual-soft: #2a2145;
+    --color-cat-mentorat: #2dd4bf;
+    --color-cat-mentorat-soft: #12332f;
+    --color-cat-medical: #fb923c;
+    --color-cat-medical-soft: #3a2314;
+    --color-cat-juridic: #60a5fa;
+    --color-cat-juridic-soft: #16263f;
+    --color-cat-cariera: #f472b6;
+    --color-cat-cariera-soft: #3a1626;
+    --color-cat-social: #94a3b8;
+    --color-cat-social-soft: #262b33;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-page: #17140f;
+  --color-raised: #201c16;
+  --color-sunken: #2a251e;
+  --color-inverse: #f3ede4;
+
+  --color-ink: #f3ede4;
+  --color-ink-soft: #c9bfb2;
+  --color-ink-muted: #948a7c;
+  --color-on-inverse: #1f1b16;
+
+  --color-line: #322c24;
+  --color-line-mid: #4a423a;
+  --color-line-strong: #c9bfb2;
+
+  --color-liber: #4ade80;
+  --color-danger: #f87171;
+  --color-brand: #f2454a;
+
+  --color-cat-spiritual: #a78bfa;
+  --color-cat-spiritual-soft: #2a2145;
+  --color-cat-mentorat: #2dd4bf;
+  --color-cat-mentorat-soft: #12332f;
+  --color-cat-medical: #fb923c;
+  --color-cat-medical-soft: #3a2314;
+  --color-cat-juridic: #60a5fa;
+  --color-cat-juridic-soft: #16263f;
+  --color-cat-cariera: #f472b6;
+  --color-cat-cariera-soft: #3a1626;
+  --color-cat-social: #94a3b8;
+  --color-cat-social-soft: #262b33;
+}
+
+/*
  * Type ramp — one class per Figma text style. `.t-hero` is the single place the
  * mobile/desktop size split lives, so headings scale without every component
  * repeating a breakpoint.
