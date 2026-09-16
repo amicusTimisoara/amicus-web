@@ -46,6 +46,14 @@
   --color-danger: #b91c1c; /* color/state/danger */
 
   /*
+   * The AMiCUS brand red, from the logo artwork. Deliberately a different red
+   * from --color-danger, which is darker and more muted: one is an identity, the
+   * other is a warning. They are never placed together, and neither should be
+   * substituted for the other.
+   */
+  --color-brand: #e9272b; /* color/brand */
+
+  /*
    * Book categories. Hue carries WHICH kind of book; free vs taken is carried by
    * hollow vs solid, never by hue — see <Dot>. Green is deliberately absent here:
    * in a booking UI it reads as "available", which would fight that split.

@@ -228,7 +228,23 @@ export const api = {
       body: JSON.stringify({ idToken }),
     }),
 
-  me: () => request<{ email: string; isEmailConfirmed: boolean }>('/auth/manage/info'),
+  me: () => request<AccountInfo>('/auth/manage/info'),
+
+  /**
+   * Identity's manage endpoint takes the old password alongside the new one —
+   * changing a password from an already-signed-in session still requires proving
+   * you know the current one, so a borrowed laptop can't lock the owner out.
+   */
+  changePassword: (oldPassword: string, newPassword: string) =>
+    request<AccountInfo>('/auth/manage/info', {
+      method: 'POST',
+      body: JSON.stringify({ oldPassword, newPassword }),
+    }),
+}
+
+export interface AccountInfo {
+  email: string
+  isEmailConfirmed: boolean
 }
 
 /** Minimum password length, mirroring `IdentitySetup.cs`. */
