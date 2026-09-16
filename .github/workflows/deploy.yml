@@ -20,6 +20,7 @@ on:
 permissions:
   contents: read
   deployments: write
+  pull-requests: write
 
 jobs:
   deploy:
@@ -63,8 +64,30 @@ jobs:
           VITE_GOOGLE_CLIENT_ID: ${{ steps.t.outputs.google }}
 
       - name: Deploy to Cloudflare Pages
+        id: cf
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist --project-name=amicus-web --branch=${{ steps.t.outputs.branch }}
+
+      # On PRs, drop (or update) a sticky comment with the preview URL — the
+      # thing Cloudflare's Git integration would post. We deploy by direct
+      # upload, so we post it ourselves.
+      - name: Comment preview URL on the PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = ${{ toJSON(steps.cf.outputs.pages-deployment-alias-url || steps.cf.outputs.deployment-url) }};
+            const marker = '<!-- amicus-preview -->';
+            const body = `${marker}\n### ⚡ Preview deployed\n\n**${url}**\n\nBuilt from ${context.sha.slice(0,7)} · points at the staging API.`;
+            const {owner, repo} = context.repo;
+            const issue_number = context.issue.number;
+            const {data: comments} = await github.rest.issues.listComments({owner, repo, issue_number});
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({owner, repo, comment_id: existing.id, body});
+            } else {
+              await github.rest.issues.createComment({owner, repo, issue_number, body});
+            }
