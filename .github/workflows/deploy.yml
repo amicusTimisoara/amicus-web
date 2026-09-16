@@ -84,7 +84,8 @@ jobs:
             // deploy by direct upload, so reproduce both from wrangler's outputs.
             const branchUrl = ${{ toJSON(steps.cf.outputs.pages-deployment-alias-url) }};
             const commitUrl = ${{ toJSON(steps.cf.outputs.deployment-url) }};
-            const sha = context.sha.slice(0, 7);
+            // On a PR, context.sha is the synthetic merge commit; show the real head sha.
+            const sha = (context.payload.pull_request?.head?.sha || context.sha).slice(0, 7);
             const marker = '<!-- amicus-preview -->';
             const rows = [];
             if (branchUrl) rows.push(`| **Branch preview** (always latest) | ${branchUrl} |`);
