@@ -9,6 +9,14 @@ const API_BASE = import.meta.env.VITE_API_BASE ?? '/api'
 
 const TOKEN_KEY = 'amicus.accessToken'
 
+/**
+ * Anything that wants to re-render when the session changes.
+ *
+ * localStorage is not observable, so a component reading `auth.token` during
+ * render has no way to learn that it changed — see `useAuthToken`.
+ */
+const authListeners = new Set<() => void>()
+
 export const auth = {
   get token(): string | null {
     try {
@@ -23,12 +31,27 @@ export const auth = {
     } catch {
       /* private mode / storage disabled — the session just won't persist */
     }
+    authListeners.forEach((fn) => fn())
   },
   clear() {
     try {
       localStorage.removeItem(TOKEN_KEY)
     } catch {
       /* ignore */
+    }
+    authListeners.forEach((fn) => fn())
+  },
+  /** Used by `useAuthToken`; returns an unsubscribe. */
+  subscribe(listener: () => void): () => void {
+    authListeners.add(listener)
+    // A sign-in or sign-out in another tab should move this one too.
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === TOKEN_KEY) listener()
+    }
+    window.addEventListener('storage', onStorage)
+    return () => {
+      authListeners.delete(listener)
+      window.removeEventListener('storage', onStorage)
     }
   },
 }
