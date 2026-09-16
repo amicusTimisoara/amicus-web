@@ -79,9 +79,20 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const url = ${{ toJSON(steps.cf.outputs.pages-deployment-alias-url || steps.cf.outputs.deployment-url) }};
+            // Cloudflare's own Git integration posts a comment with a branch link
+            // (always latest) and a per-deployment link (this exact commit). We
+            // deploy by direct upload, so reproduce both from wrangler's outputs.
+            const branchUrl = ${{ toJSON(steps.cf.outputs.pages-deployment-alias-url) }};
+            const commitUrl = ${{ toJSON(steps.cf.outputs.deployment-url) }};
+            const sha = context.sha.slice(0, 7);
             const marker = '<!-- amicus-preview -->';
-            const body = `${marker}\n### ⚡ Preview deployed\n\n**${url}**\n\nBuilt from ${context.sha.slice(0,7)} · points at the staging API.`;
+            const rows = [];
+            if (branchUrl) rows.push(`| **Branch preview** (always latest) | ${branchUrl} |`);
+            if (commitUrl && commitUrl !== branchUrl) rows.push(`| **This commit** (\`${sha}\`) | ${commitUrl} |`);
+            const links = rows.length
+              ? `\n\n| | |\n|---|---|\n${rows.join('\n')}`
+              : `\n\n${branchUrl || commitUrl || '_(deployment URL unavailable)_'}`;
+            const body = `${marker}\n### ⚡ Preview deployed${links}\n\nUpdates on every push · points at the staging API.`;
             const {owner, repo} = context.repo;
             const issue_number = context.issue.number;
             const {data: comments} = await github.rest.issues.listComments({owner, repo, issue_number});
