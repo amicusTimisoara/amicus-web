@@ -4,6 +4,7 @@ import { Button } from '../components/Button'
 import { GoogleButton } from '../components/GoogleButton'
 import { PASSWORD_MIN_LENGTH, api, auth, registerErrorMessage } from '../lib/api'
 import { cx } from '../lib/cx'
+import { FIELD_BASE, FIELD_IDLE } from '../lib/forms'
 
 export function InregistrarePage() {
   const navigate = useNavigate()
@@ -43,8 +44,6 @@ export function InregistrarePage() {
     }
   }
 
-  const field =
-    't-body rounded-md border bg-raised px-3 py-2.5 text-ink outline-none focus:border-line-strong'
 
   return (
     <section className="mx-auto max-w-sm px-5 pt-6 pb-20">
@@ -62,7 +61,7 @@ export function InregistrarePage() {
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className={cx(field, 'border-line-mid')}
+            className={cx(FIELD_BASE, FIELD_IDLE)}
           />
         </label>
 
@@ -77,7 +76,7 @@ export function InregistrarePage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             aria-describedby="regula-parola"
-            className={cx(field, tooShort ? 'border-danger' : 'border-line-mid')}
+            className={cx(FIELD_BASE, tooShort ? 'border-danger' : 'border-line-mid')}
           />
           <span
             id="regula-parola"
@@ -97,7 +96,7 @@ export function InregistrarePage() {
             autoComplete="new-password"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
-            className={cx(field, mismatch ? 'border-danger' : 'border-line-mid')}
+            className={cx(FIELD_BASE, mismatch ? 'border-danger' : 'border-line-mid')}
           />
           {mismatch && (
             <span className="t-body-sm text-danger">Parolele nu se potrivesc.</span>

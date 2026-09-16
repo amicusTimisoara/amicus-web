@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '../components/Button'
 import { ApiError, api, auth } from '../lib/api'
+import { cx } from '../lib/cx'
+import { FIELD_BASE, FIELD_IDLE } from '../lib/forms'
 
 export function ResetareParolaPage() {
   const [params] = useSearchParams()
@@ -69,7 +71,7 @@ export function ResetareParolaPage() {
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="rounded-xl border border-line px-4 py-3 text-ink outline-none focus:border-primary"
+            className={cx(FIELD_BASE, FIELD_IDLE)}
           />
         </label>
         <label className="flex flex-col gap-1.5">
@@ -80,7 +82,7 @@ export function ResetareParolaPage() {
             autoComplete="new-password"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
-            className="rounded-xl border border-line px-4 py-3 text-ink outline-none focus:border-primary"
+            className={cx(FIELD_BASE, FIELD_IDLE)}
           />
         </label>
         {error && <p className="t-body text-danger">{error}</p>}
