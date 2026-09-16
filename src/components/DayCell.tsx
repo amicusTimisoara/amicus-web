@@ -15,20 +15,30 @@ interface DayCellProps {
   isSelected: boolean
   marks: DayMark[]
   onSelect?: () => void
+  /**
+   * Whether the accessible name should name the categories present.
+   *
+   * False on a single person's own calendar, where every dot is theirs and the
+   * hue carries no information — naming a category there states something untrue
+   * to a screen-reader user, which is worse than saying nothing.
+   */
+  describeCategories?: boolean
 }
 
 /** Four dots in a 48px cell is already crowded; beyond that we count instead. */
 const MAX_DOTS = 3
 
-function summarise(day: number, marks: DayMark[]): string {
+function summarise(day: number, marks: DayMark[], describeCategories: boolean): string {
   if (marks.length === 0) return `${day}, nicio întâlnire`
   const free = marks.filter((m) => !m.taken).length
   const taken = marks.length - free
   const parts: string[] = []
   if (free > 0) parts.push(free === 1 ? 'un loc liber' : `${free} locuri libere`)
   if (taken > 0) parts.push(taken === 1 ? 'un loc ocupat' : `${taken} locuri ocupate`)
+  const counts = `${day}, ${parts.join(' și ')}`
+  if (!describeCategories) return counts
   const kinds = [...new Set(marks.map((m) => CATEGORY_LABEL[m.category]))].join(', ')
-  return `${day}, ${parts.join(' și ')} — ${kinds}`
+  return `${counts} — ${kinds}`
 }
 
 /**
@@ -45,6 +55,7 @@ export function DayCell({
   isSelected,
   marks,
   onSelect,
+  describeCategories = true,
 }: DayCellProps) {
   const shown = marks.slice(0, MAX_DOTS)
   const overflow = marks.length - shown.length
@@ -59,7 +70,7 @@ export function DayCell({
       disabled={!inMonth}
       aria-current={isToday ? 'date' : undefined}
       aria-pressed={inMonth ? isSelected : undefined}
-      aria-label={summarise(day, marks)}
+      aria-label={summarise(day, marks, describeCategories)}
       className={cx(
         'flex h-14 flex-col items-center gap-1 rounded-md pt-2 transition-colors',
         'sm:h-[76px] sm:pt-3',

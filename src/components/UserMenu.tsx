@@ -162,6 +162,13 @@ export function UserMenu() {
           </div>
 
           <nav className="flex flex-col py-1">
+            {/* Only a „carte” has a calendar to publish, so it appears only for
+                them rather than as an item that explains itself with a refusal. */}
+            {isCarte && (
+              <MenuLink to="/cartea-mea" onNavigate={close}>
+                Disponibilitatea mea
+              </MenuLink>
+            )}
             <MenuLink to="/rezervarile-mele" onNavigate={close}>
               Rezervările mele
             </MenuLink>

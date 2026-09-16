@@ -269,6 +269,32 @@ export const api = {
   myApplication: () =>
     request<SpecialistApplication | undefined>('/account/specialist-application'),
 
+  /** The intervals this „carte” has published, inclusive YYYY-MM-DD days. */
+  carteSlots: (from: string, to: string) => {
+    const query = new URLSearchParams({ from, to })
+    return request<CarteSlot[]>(`/account/carte/slots?${query}`)
+  },
+
+  /**
+   * Publish one interval. Length is per interval, not a property of the person,
+   * so it is chosen here rather than once on the application.
+   *
+   * `day` is YYYY-MM-DD and `startTime` is HH:mm, both WALL-CLOCK in the event's
+   * own zone. Deliberately not an instant: turning "the 21st at 16:00" into UTC
+   * here made the result depend on the device's clock, so a „carte” publishing
+   * from abroad would have booked a student at the wrong hour. The server knows
+   * the event's zone and does the conversion.
+   */
+  publishSlot: (day: string, startTime: string, durationMinutes: number) =>
+    request<CarteSlot>('/account/carte/slots', {
+      method: 'POST',
+      body: JSON.stringify({ day, startTime, durationMinutes }),
+    }),
+
+  /** Only works while nobody has booked it; the server answers 409 if they have. */
+  withdrawSlot: (id: string) =>
+    request<void>(`/account/carte/slots/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+
   applyAsCarte: (body: SubmitApplication) =>
     request<SpecialistApplication>('/account/specialist-application', {
       method: 'POST',
@@ -333,6 +359,23 @@ export interface SpecialistApplication {
   createdAt: string
   reviewedAt: string | null
   specialistId: string | null
+}
+
+/**
+ * One interval a „carte” has published, on their own calendar.
+ *
+ * `isBooked` is all they get about a booking — never who took it. They need to
+ * know the slot is spoken for so they turn up; the student's identity reaches
+ * them at check-in, not from a calendar they might be scrolling in public.
+ */
+export interface CarteSlot {
+  id: string
+  startsAt: string
+  endsAt: string
+  isBooked: boolean
+  isBlocked: boolean
+  eventSlug: string
+  eventName: string
 }
 
 export interface SubmitApplication {
