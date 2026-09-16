@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Button, ButtonLink } from '../components/Button'
 import { ApiError, PASSWORD_MIN_LENGTH, api, auth } from '../lib/api'
 import { cx } from '../lib/cx'
+import { FIELD_BASE, FIELD_IDLE } from '../lib/forms'
 import { initialsFromEmail } from '../lib/initials'
 import { clearMeCache, useMe } from '../lib/useMe'
 
@@ -117,8 +118,6 @@ function ChangePassword() {
     }
   }
 
-  const field =
-    't-body rounded-md border bg-raised px-3 py-2.5 text-ink outline-none focus:border-line-strong'
 
   return (
     <div className="mt-8">
@@ -133,7 +132,7 @@ function ChangePassword() {
             autoComplete="current-password"
             value={current}
             onChange={(e) => setCurrent(e.target.value)}
-            className={cx(field, 'border-line-mid')}
+            className={cx(FIELD_BASE, FIELD_IDLE)}
           />
         </label>
 
@@ -146,7 +145,7 @@ function ChangePassword() {
             minLength={PASSWORD_MIN_LENGTH}
             value={next}
             onChange={(e) => setNext(e.target.value)}
-            className={cx(field, tooShort ? 'border-danger' : 'border-line-mid')}
+            className={cx(FIELD_BASE, tooShort ? 'border-danger' : 'border-line-mid')}
           />
           <span className={cx('t-body-sm', tooShort ? 'text-danger' : 'text-ink-muted')}>
             Cel puțin {PASSWORD_MIN_LENGTH} caractere.
@@ -161,7 +160,7 @@ function ChangePassword() {
             autoComplete="new-password"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
-            className={cx(field, mismatch ? 'border-danger' : 'border-line-mid')}
+            className={cx(FIELD_BASE, mismatch ? 'border-danger' : 'border-line-mid')}
           />
           {mismatch && (
             <span className="t-body-sm text-danger">Parolele nu se potrivesc.</span>

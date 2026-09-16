@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '../components/Button'
 import { GoogleButton } from '../components/GoogleButton'
 import { ApiError, api, auth } from '../lib/api'
+import { cx } from '../lib/cx'
+import { FIELD_BASE, FIELD_IDLE } from '../lib/forms'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -45,7 +47,7 @@ export function LoginPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="t-body rounded-md border border-line-mid bg-raised px-3 py-2.5 text-ink outline-none focus:border-line-strong"
+            className={cx(FIELD_BASE, FIELD_IDLE)}
           />
         </label>
 
@@ -56,7 +58,7 @@ export function LoginPage() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="t-body rounded-md border border-line-mid bg-raised px-3 py-2.5 text-ink outline-none focus:border-line-strong"
+            className={cx(FIELD_BASE, FIELD_IDLE)}
           />
         </label>
 

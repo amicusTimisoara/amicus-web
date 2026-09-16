@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '../components/Button'
 import { api } from '../lib/api'
+import { cx } from '../lib/cx'
+import { FIELD_BASE, FIELD_IDLE } from '../lib/forms'
 
 export function ParolaUitataPage() {
   const [email, setEmail] = useState('')
@@ -51,7 +53,7 @@ export function ParolaUitataPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="rounded-xl border border-line px-4 py-3 text-ink outline-none focus:border-primary"
+            className={cx(FIELD_BASE, FIELD_IDLE)}
           />
         </label>
         <Button type="submit" disabled={busy}>
