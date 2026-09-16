@@ -63,6 +63,30 @@ export function ConfidentialitatePage() {
         </ul>
       </Section>
 
+      <Section title="Emailul pe care ți-l trimite Google">
+        <p className="t-body mt-2 text-ink-soft">
+          Dacă intri în cont cu Google, Google îți trimite automat un email cu un titlu de
+          forma „Ai trimis unele date din Contul tău Google”. Este o notificare standard,
+          trimisă de Google — nu de noi — prima dată când folosești „Continuă cu Google”
+          într-o aplicație. Nu înseamnă că s-a întâmplat ceva neobișnuit.
+        </p>
+        <p className="t-body mt-3 text-ink-soft">
+          Ea confirmă exact ce scrie mai sus: am primit numele, adresa de email și poza ta de
+          profil — nimic altceva. Nu avem acces la Gmail, la Drive, la contactele sau la
+          calendarul tău și nu putem face nimic în numele tău. Poți vedea și retrage oricând
+          accesul din{' '}
+          <a
+            href="https://myaccount.google.com/connections"
+            target="_blank"
+            rel="noreferrer"
+            className="text-ink underline"
+          >
+            setările Contului tău Google
+          </a>
+          .
+        </p>
+      </Section>
+
       <Section title="Unde sunt stocate">
         <p className="t-body mt-2 text-ink-soft">
           Datele sunt păstrate pe serverul proiectului și sunt accesibile doar echipei AMiCUS

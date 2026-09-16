@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ApiError, api, auth } from '../lib/api'
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined
@@ -94,6 +94,20 @@ export function GoogleButton() {
     <div className="flex flex-col items-center gap-2">
       <div ref={ref} />
       {error && <p className="t-body-sm text-danger">{error}</p>}
+      {/*
+        Google emails every student the first time they use this button — "Ai
+        trimis unele date din Contul tău Google". It is a routine notice from
+        Google, but arriving unannounced after signing up to a student project it
+        reads like a breach. Saying what we receive, before they click, costs two
+        lines and removes the surprise.
+      */}
+      <p className="t-body-sm m-0 max-w-80 text-center text-ink-muted">
+        Primim doar numele, adresa de email și poza de profil. Google îți trimite un email
+        de confirmare — e normal.{' '}
+        <Link to="/confidentialitate" className="text-ink underline">
+          Detalii
+        </Link>
+      </p>
     </div>
   )
 }
