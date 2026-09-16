@@ -278,11 +278,17 @@ export const api = {
   /**
    * Publish one interval. Length is per interval, not a property of the person,
    * so it is chosen here rather than once on the application.
+   *
+   * `day` is YYYY-MM-DD and `startTime` is HH:mm, both WALL-CLOCK in the event's
+   * own zone. Deliberately not an instant: turning "the 21st at 16:00" into UTC
+   * here made the result depend on the device's clock, so a „carte” publishing
+   * from abroad would have booked a student at the wrong hour. The server knows
+   * the event's zone and does the conversion.
    */
-  publishSlot: (startsAt: string, durationMinutes: number) =>
+  publishSlot: (day: string, startTime: string, durationMinutes: number) =>
     request<CarteSlot>('/account/carte/slots', {
       method: 'POST',
-      body: JSON.stringify({ startsAt, durationMinutes }),
+      body: JSON.stringify({ day, startTime, durationMinutes }),
     }),
 
   /** Only works while nobody has booked it; the server answers 409 if they have. */

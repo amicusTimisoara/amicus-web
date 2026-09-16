@@ -239,11 +239,10 @@ function DayPanel({
     setBusy(true)
     setError(null)
     try {
-      // Built in the browser's own zone. Everyone running this project is in
-      // Romania, which is the event zone; a „carte” travelling abroad would want
-      // the event's zone applied instead, and that needs the server's help.
-      const startsAt = new Date(`${dayKey}T${time}:00`).toISOString()
-      await api.publishSlot(startsAt, minutes)
+      // Sent as wall-clock, exactly as typed. The server applies the event's zone,
+      // so what a „carte” publishes means the same hour wherever they happen to
+      // be when they publish it.
+      await api.publishSlot(dayKey, time, minutes)
       onChanged()
     } catch (err) {
       setError(publishError(err))
@@ -372,6 +371,9 @@ function publishError(err: unknown): string {
   }
   if (err.status === 400 && detail.includes('past')) {
     return 'Nu poți publica un interval în trecut.'
+  }
+  if (err.status === 400 && detail.includes('does not exist')) {
+    return 'Ora aceea nu există în ziua aceea — se schimbă ora de vară.'
   }
   if (err.status === 400) {
     return 'Durata trebuie să fie între 1 și 240 de minute.'
