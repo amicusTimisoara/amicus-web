@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ApiError, api, auth, type AccountInfo } from './api'
+import { useAuthToken } from './useAuth'
 
 /**
  * The signed-in account.
@@ -34,7 +35,7 @@ export function useMe(): AccountInfo | null {
   // triggers the fetch. The header lives in Layout and never remounts, so an
   // effect that only ran on mount would keep showing an anonymous avatar until
   // a full page reload.
-  const token = auth.token
+  const token = useAuthToken()
 
   useEffect(() => {
     listeners.add(setMe)

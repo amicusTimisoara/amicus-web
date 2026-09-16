@@ -1,6 +1,6 @@
 import { Link, NavLink } from 'react-router-dom'
-import { auth } from '../lib/api'
 import { cx } from '../lib/cx'
+import { useSignedIn } from '../lib/useAuth'
 import { Logo } from './Logo'
 import { UserMenu } from './UserMenu'
 
@@ -10,7 +10,7 @@ const LINKS = [
 ]
 
 export function TopBar() {
-  const signedIn = auth.token !== null
+  const signedIn = useSignedIn()
 
   return (
     <header className="flex items-center justify-between gap-4 px-5 py-5 sm:px-12 lg:px-25">

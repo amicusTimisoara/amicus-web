@@ -7,12 +7,13 @@ import { cx } from '../lib/cx'
 import { FIELD_BASE, FIELD_IDLE } from '../lib/forms'
 import { initialsFromEmail } from '../lib/initials'
 import { resolvedTheme, useTheme } from '../lib/theme'
+import { useSignedIn } from '../lib/useAuth'
 import { clearMeCache, setMeCache, useMe } from '../lib/useMe'
 
 export function SetariPage() {
   const navigate = useNavigate()
   const me = useMe()
-  const signedIn = auth.token !== null
+  const signedIn = useSignedIn()
 
   if (!signedIn) {
     return (
