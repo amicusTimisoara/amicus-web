@@ -97,6 +97,17 @@ function fold(value: string): string {
     .replace(/[̀-ͯ]/g, '')
 }
 
+/**
+ * The server's `SpecialistCategory` name ("Medical") onto our slug ("medical").
+ * Returns null for absent or unrecognised values so the caller can fall back to
+ * guessing from the free-text specialty.
+ */
+export function fromServerCategory(value: string | null | undefined): Category | null {
+  if (!value) return null
+  const slug = value.toLowerCase()
+  return (CATEGORIES as readonly string[]).includes(slug) ? (slug as Category) : null
+}
+
 export function toCategory(specialty: string | null | undefined): Category {
   if (!specialty) return 'social'
   const needle = fold(specialty)

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { initialsOf } from '../lib/initials'
 import { SlotRow } from '../components/SlotRow'
+import { ProfileTag } from '../components/ProfileTag'
 import { Tag } from '../components/Tag'
 import { addMonths, zonedTime, type YearMonth } from '../lib/date'
 import { dayMonthLabel, zonedDayKey, weekdayLongFromKey } from '../lib/date'
@@ -76,7 +77,10 @@ export function CartePage() {
           </span>
 
           <h1 className="t-hero m-0 text-ink">{book.fullName}</h1>
-          <Tag category={book.category} />
+          <div className="flex flex-wrap items-center gap-2">
+            <Tag category={book.category} />
+            {book.storyProfile && <ProfileTag profile={book.storyProfile} />}
+          </div>
 
           {book.bio && <p className="t-body-lg m-0 max-w-[62ch] text-ink-soft">{book.bio}</p>}
 

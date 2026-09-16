@@ -132,6 +132,14 @@ export interface SpecialistSummary {
   specialistId: string
   fullName: string
   specialty: string
+  /**
+   * The advice domain, first-class on the server since the category migration.
+   * A `SpecialistCategory` name ("Medical", "Juridic", ...) — PascalCase, unlike
+   * our lowercase slugs, so it is narrowed in `categories.ts` rather than used raw.
+   */
+  category: string | null
+  /** A `StoryProfile` name ("Pastor", "Tragedie", ...), or null if untagged. */
+  profile: string | null
   bio: string | null
   location: string | null
 }
