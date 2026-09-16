@@ -8,6 +8,7 @@ import { FIELD_BASE, FIELD_IDLE } from '../lib/forms'
 import { initialsFromEmail } from '../lib/initials'
 import { resolvedTheme, useTheme } from '../lib/theme'
 import { useSignedIn } from '../lib/useAuth'
+import { useMyApplication } from '../lib/useApplication'
 import { clearMeCache, setMeCache, useMe } from '../lib/useMe'
 
 export function SetariPage() {
@@ -34,7 +35,11 @@ export function SetariPage() {
       <div className="mt-8 flex items-center gap-4 rounded-lg border border-line bg-raised p-5">
         <span
           aria-hidden="true"
-          className="t-label flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sunken text-ink-soft"
+          className={cx(
+            't-label flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sunken text-ink-soft',
+            // Same marker as the header avatar: brand red, never danger red.
+            me?.isCarte && 'border-2 border-brand',
+          )}
         >
           {me?.photoUrl ? (
             <img src={me.photoUrl} alt="" className="size-full object-cover" />
@@ -76,6 +81,8 @@ export function SetariPage() {
       <Appearance />
 
       <ChangePassword />
+
+      <DevinoCarte />
 
       <div className="mt-10 border-t border-line pt-6">
         <Button
@@ -168,6 +175,54 @@ function DisplayName() {
           {busy ? 'Se salvează…' : 'Salvează numele'}
         </Button>
       </form>
+    </div>
+  )
+}
+
+/**
+ * The way in to becoming a „carte”.
+ *
+ * Shows where the person actually is rather than one fixed invitation: already a
+ * „carte”, waiting on a decision, refused (with the reason, so they know what to
+ * change), or never asked.
+ */
+function DevinoCarte() {
+  const { me } = useMe()
+  const { state } = useMyApplication()
+
+  if (me?.isCarte) {
+    return (
+      <div className="mt-10">
+        <h2 className="t-h2 m-0 text-ink">Ești o „carte”</h2>
+        <p className="t-body-sm mt-1 text-ink-muted">
+          Publică intervalele în care ești disponibilă în luna aceasta.
+        </p>
+      </div>
+    )
+  }
+
+  // Don't flash an invitation at someone who has already applied.
+  if (state.status === 'loading' || state.status === 'anonymous') return null
+
+  const pending = state.status === 'ready' && state.application.status === 'Pending'
+  const note = state.status === 'ready' ? state.application.reviewNote : null
+
+  return (
+    <div className="mt-10">
+      <h2 className="t-h2 m-0 text-ink">Vrei să devii o „carte”?</h2>
+      <p className="t-body-sm mt-1 text-ink-muted">
+        {pending
+          ? 'Cererea ta e în analiză. Îți scriem pe email când primim un răspuns.'
+          : 'Dacă ai o poveste pe care studenții ar avea de câștigat ascultând-o, trimite-ne o cerere.'}
+      </p>
+      {note && <p className="t-body-sm mt-2 text-ink-soft">Răspuns anterior: {note}</p>}
+      {!pending && (
+        <div className="mt-4">
+          <ButtonLink to="/devino-carte" variant="ghost" fullWidth>
+            Trimite o cerere
+          </ButtonLink>
+        </div>
+      )}
     </div>
   )
 }

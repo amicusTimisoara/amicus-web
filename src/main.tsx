@@ -9,6 +9,7 @@ import { CartiPage } from './pages/CartiPage'
 import { InregistrarePage } from './pages/InregistrarePage'
 import { ConfirmarePage } from './pages/ConfirmarePage'
 import { ConfidentialitatePage } from './pages/ConfidentialitatePage'
+import { DevinoCartePage } from './pages/DevinoCartePage'
 import { LoginPage } from './pages/LoginPage'
 import { ParolaUitataPage } from './pages/ParolaUitataPage'
 import { ResetareParolaPage } from './pages/ResetareParolaPage'
@@ -25,6 +26,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="carti/:specialistId" element={<CartePage />} />
           <Route path="rezervarile-mele" element={<RezervarilePage />} />
           <Route path="setari" element={<SetariPage />} />
+          <Route path="devino-carte" element={<DevinoCartePage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="inregistrare" element={<InregistrarePage />} />
           <Route path="parola-uitata" element={<ParolaUitataPage />} />

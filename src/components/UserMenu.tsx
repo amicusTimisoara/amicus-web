@@ -34,6 +34,10 @@ export function UserMenu() {
 
   const photoUrl = me?.photoUrl ?? null
   const initials = me ? initialsFromEmail(me.email) : '·'
+  // A „carte” is recognisable by a brand-red ring wherever their avatar appears.
+  // Brand red, never danger red — it marks who someone is, not that something
+  // is wrong, and the two are separate tokens precisely so this stays readable.
+  const isCarte = me?.isCarte === true
 
   // Close on click outside and on Escape. Without these the panel survives
   // navigation clicks and traps keyboard users with no way back out.
@@ -108,11 +112,15 @@ export function UserMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
-        aria-label="Contul meu"
+        aria-label={isCarte ? 'Contul meu (carte)' : 'Contul meu'}
         className={cx(
           'flex size-10 cursor-pointer items-center justify-center overflow-hidden rounded-full',
-          'border transition-colors',
-          open ? 'border-line-strong bg-sunken' : 'border-line bg-sunken hover:border-line-mid',
+          'transition-colors',
+          isCarte
+            ? 'border-2 border-brand bg-sunken'
+            : cx('border', open
+                ? 'border-line-strong bg-sunken'
+                : 'border-line bg-sunken hover:border-line-mid'),
         )}
       >
         {photoUrl ? (
