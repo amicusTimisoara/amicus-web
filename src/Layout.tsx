@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom'
+import { Link, Outlet } from 'react-router-dom'
 import { TopBar } from './components/TopBar'
 
 export function Layout() {
@@ -15,6 +15,9 @@ export function Layout() {
         <p className="t-body-sm mt-2 mb-0 text-ink-muted">
           The Human Library · un proiect AMiCUS Timișoara
         </p>
+        <Link to="/confidentialitate" className="t-body-sm mt-2 inline-block text-ink-muted underline">
+          Politica de confidențialitate
+        </Link>
       </footer>
     </div>
   )
