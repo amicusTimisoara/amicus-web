@@ -153,7 +153,7 @@ function Hero() {
         <span className="t-tag text-ink-muted">AMiCUS Timișoara</span>
         <h1 className="t-hero m-0 text-ink">The Human Library</h1>
         <p className="t-quote m-0 max-w-[36ch] text-ink-soft lg:hidden">
-          „Împrumută oameni, nu cărți.”
+          „Cărți vii, povești reale.”
         </p>
         <p className="t-body-lg m-0 max-w-[48ch] text-ink-soft">
           Aici „cărțile” sunt oameni. Alegi o poveste, rezervi o jumătate de oră și stai de
@@ -163,7 +163,7 @@ function Hero() {
       </div>
 
       <div className="hidden flex-col gap-6 rounded-xl bg-sunken px-10 py-12 lg:flex">
-        <p className="t-h1 m-0 text-ink">„Împrumută oameni, nu cărți.”</p>
+        <p className="t-h1 m-0 text-ink">„Cărți vii, povești reale.”</p>
         <p className="t-quote m-0 text-ink-soft">
           Dincolo de etichete, există o poveste.
         </p>
