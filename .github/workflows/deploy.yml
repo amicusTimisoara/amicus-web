@@ -49,11 +49,13 @@ jobs:
           else
             echo "branch=staging"                >> "$GITHUB_OUTPUT"
             echo "api=https://stage.thorsp.net"   >> "$GITHUB_OUTPUT"
-            echo "google=" >> "$GITHUB_OUTPUT"
+            echo "google=695044425932-id1oe3r50825d02o4pjrijeuj3fc6qma.apps.googleusercontent.com" >> "$GITHUB_OUTPUT"
           fi
 
-      # Only app.thorsp.net / amicus-web.pages.dev are allow-listed on the OAuth
-      # client, so the Google button ships on production only.
+      # app.thorsp.net (prod) and staging.amicus-web.pages.dev (staging) are
+      # allow-listed on the OAuth client, so both ship the Google button. PR
+      # previews get a unique *.amicus-web.pages.dev origin that Google can't
+      # wildcard, so they stay password-only.
       - name: Build
         run: bun run build
         env:
