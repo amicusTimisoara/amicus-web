@@ -80,3 +80,5 @@ production only (only its origins are allow-listed on the OAuth client). Needs t
 
 `main` is protected: open a PR, get one approval, merge with **squash** (the only
 method enabled). CI runs lint + build (type-check included) on every PR.
+
+<!-- preview-comment CI test -->
