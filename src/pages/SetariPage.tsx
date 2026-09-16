@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button, ButtonLink } from '../components/Button'
+import { Switch } from '../components/Switch'
 import { ApiError, PASSWORD_MIN_LENGTH, api, auth } from '../lib/api'
 import { cx } from '../lib/cx'
 import { FIELD_BASE, FIELD_IDLE } from '../lib/forms'
 import { initialsFromEmail } from '../lib/initials'
+import { resolvedTheme, useTheme } from '../lib/theme'
 import { clearMeCache, setMeCache, useMe } from '../lib/useMe'
 
 export function SetariPage() {
@@ -54,6 +56,8 @@ export function SetariPage() {
       </div>
 
       <DisplayName />
+
+      <Appearance />
 
       <ChangePassword />
 
@@ -142,6 +146,49 @@ function DisplayName() {
           {busy ? 'Se salvează…' : 'Salvează numele'}
         </Button>
       </form>
+    </div>
+  )
+}
+
+function Appearance() {
+  const [theme, setThemeChoice] = useTheme()
+  const dark = resolvedTheme(theme) === 'dark'
+
+  return (
+    <div className="mt-8">
+      <h2 className="t-h2 m-0 text-ink">Aspect</h2>
+
+      <div className="mt-4 flex items-center gap-4 rounded-lg border border-line bg-raised p-5">
+        <div className="min-w-0 flex-1">
+          <p className="t-body m-0 text-ink">Mod întunecat</p>
+          <p id="tema-explicatie" className="t-body-sm m-0 text-ink-muted">
+            {theme === 'system'
+              ? 'Urmează setarea sistemului. Atinge comutatorul ca să alegi tu.'
+              : dark
+                ? 'Ales manual. Nu se mai schimbă odată cu sistemul.'
+                : 'Ales manual. Nu se mai schimbă odată cu sistemul.'}
+          </p>
+        </div>
+
+        <Switch
+          checked={dark}
+          // Flipping it commits to an explicit choice — the point of touching the
+          // switch is to stop following the system.
+          onChange={(next) => setThemeChoice(next ? 'dark' : 'light')}
+          label="Mod întunecat"
+          describedBy="tema-explicatie"
+        />
+      </div>
+
+      {theme !== 'system' && (
+        <button
+          type="button"
+          onClick={() => setThemeChoice('system')}
+          className="t-body-sm mt-3 cursor-pointer text-ink-soft underline"
+        >
+          Revino la setarea sistemului
+        </button>
+      )}
     </div>
   )
 }

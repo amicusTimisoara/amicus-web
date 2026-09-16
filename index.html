@@ -5,6 +5,17 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AMiCUS Timișoara</title>
+    <script>
+      // Stamp the saved theme BEFORE first paint. Doing this in React instead
+      // would render one frame of the light theme first, and a white flash on a
+      // dark-theme phone is exactly what someone chose dark to avoid.
+      try {
+        var t = localStorage.getItem('amicus.theme')
+        if (t === 'dark' || t === 'light') {
+          document.documentElement.setAttribute('data-theme', t)
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

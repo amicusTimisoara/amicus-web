@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api, auth, type AccountInfo } from './api'
+import { ApiError, api, auth, type AccountInfo } from './api'
 
 /**
  * The signed-in account.
@@ -26,6 +26,9 @@ export function setMeCache(info: AccountInfo) {
 
 export function useMe(): AccountInfo | null {
   const [me, setMe] = useState<AccountInfo | null>(cached)
+  // Bumped when the stored token turns out to be dead, so the caller re-renders
+  // and sees `auth.token` as null.
+  const [, forceRender] = useState(0)
 
   // Read during render and depend on it, so signing in mid-session actually
   // triggers the fetch. The header lives in Layout and never remounts, so an
@@ -51,11 +54,21 @@ export function useMe(): AccountInfo | null {
         cached = info
         if (live) setMe(info)
       })
-      .catch(() => {
-        // A failure here is not worth surfacing: the header falls back to a
-        // neutral avatar, and anything that actually needs the account will
-        // report its own 401.
+      .catch((error: unknown) => {
         inFlight = null
+
+        // A 401 means the stored token is expired or revoked. Swallowing it left
+        // the header on a blank avatar and the settings page saying "Se
+        // încarcă…" forever — claiming to be loading something that had already
+        // failed. Drop the dead token instead, so the UI honestly shows signed
+        // out and offers a way back in.
+        if (error instanceof ApiError && error.status === 401) {
+          cached = null
+          auth.clear()
+          if (live) forceRender((n) => n + 1)
+        }
+        // Anything else (offline, server down) leaves the token alone: the
+        // session is probably still good and the next request can retry.
       })
 
     return () => {
