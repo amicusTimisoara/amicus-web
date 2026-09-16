@@ -295,6 +295,43 @@ export const api = {
   withdrawSlot: (id: string) =>
     request<void>(`/account/carte/slots/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 
+  // --- admin console. Every one of these 403s for a normal account, which is
+  // how the page decides whether to render itself at all. ---
+
+  adminApplications: (status?: string) => {
+    const query = status ? `?${new URLSearchParams({ status })}` : ''
+    return request<SpecialistApplication[]>(`/admin/specialist-applications${query}`)
+  },
+
+  approveApplication: (id: string) =>
+    request<SpecialistApplication>(
+      `/admin/specialist-applications/${encodeURIComponent(id)}/approve`,
+      { method: 'POST' },
+    ),
+
+  rejectApplication: (id: string, note: string | null) =>
+    request<SpecialistApplication>(
+      `/admin/specialist-applications/${encodeURIComponent(id)}/reject`,
+      { method: 'POST', body: JSON.stringify({ note }) },
+    ),
+
+  adminEvents: () => request<AdminEventSummary[]>('/admin/events'),
+
+  adminSpecialists: () => request<AdminSpecialist[]>('/admin/specialists'),
+
+  adminRoster: (eventId: string) =>
+    request<AdminRosterEntry[]>(`/admin/events/${encodeURIComponent(eventId)}/specialists`),
+
+  /** Puts a „carte” on a month's roster — without this they cannot publish anything. */
+  assignToEvent: (eventId: string, specialistId: string, location: string | null) =>
+    request<string>(`/admin/events/${encodeURIComponent(eventId)}/specialists`, {
+      method: 'POST',
+      body: JSON.stringify({ specialistId, location }),
+    }),
+
+  publishEvent: (eventId: string) =>
+    request<void>(`/admin/events/${encodeURIComponent(eventId)}/publish`, { method: 'POST' }),
+
   applyAsCarte: (body: SubmitApplication) =>
     request<SpecialistApplication>('/account/specialist-application', {
       method: 'POST',
@@ -376,6 +413,39 @@ export interface CarteSlot {
   isBlocked: boolean
   eventSlug: string
   eventName: string
+}
+
+export interface AdminEventSummary {
+  id: string
+  slug: string
+  name: string
+  startsOn: string
+  endsOn: string
+  timeZoneId: string
+  isPublished: boolean
+  specialistCount: number
+  slotCount: number
+}
+
+export interface AdminRosterEntry {
+  eventSpecialistId: string
+  specialistId: string
+  fullName: string
+  specialty: string
+  location: string | null
+  patternCount: number
+  slotCount: number
+  bookedCount: number
+}
+
+export interface AdminSpecialist {
+  id: string
+  fullName: string
+  specialty: string
+  category: string
+  profile: string | null
+  bio: string | null
+  isActive: boolean
 }
 
 export interface SubmitApplication {
