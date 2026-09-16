@@ -1,11 +1,15 @@
 import { Link } from 'react-router-dom'
 import type { Category } from '../lib/categories'
+import type { Profile } from '../lib/profiles'
 import { initialsOf } from '../lib/initials'
+import { ProfileTag } from './ProfileTag'
 import { Tag } from './Tag'
 
 interface BookCardProps {
   name: string
   category: Category
+  /** The story axis, when the book has been tagged on it. */
+  storyProfile?: Profile | null
   description: string | null
   freeCount: number
   to: string
@@ -24,7 +28,14 @@ function availability(count: number): { label: string; className: string } {
  * availability line — students should still see who exists and read their story,
  * even when there is nothing to reserve this month.
  */
-export function BookCard({ name, category, description, freeCount, to }: BookCardProps) {
+export function BookCard({
+  name,
+  category,
+  storyProfile,
+  description,
+  freeCount,
+  to,
+}: BookCardProps) {
   const free = availability(freeCount)
 
   return (
@@ -41,8 +52,11 @@ export function BookCard({ name, category, description, freeCount, to }: BookCar
         </span>
         <div className="flex min-w-0 flex-col gap-2">
           <span className="t-h2 truncate text-ink">{name}</span>
-          <span>
+          {/* Both axes, wrapping rather than truncating: on a phone the profile
+              drops to its own line instead of being cut in half. */}
+          <span className="flex flex-wrap items-center gap-1.5">
             <Tag category={category} />
+            {storyProfile && <ProfileTag profile={storyProfile} />}
           </span>
         </div>
       </div>

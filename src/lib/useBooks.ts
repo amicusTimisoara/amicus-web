@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react'
 import { ApiError, api, type SpecialistSummary } from './api'
-import { toCategory, type Category } from './categories'
+import { fromServerCategory, toCategory, type Category } from './categories'
+import { toProfile, type Profile } from './profiles'
 
 export interface Book extends SpecialistSummary {
+  /** Narrowed to a slug: the server's value when it sent one, else guessed. */
   category: Category
+  /** The story axis. Null until someone tags the book. */
+  storyProfile: Profile | null
 }
 
 export type BooksState =
@@ -40,7 +44,13 @@ export function useBooks(): BooksState {
           if (seen.has(specialist.specialistId)) continue
           seen.set(specialist.specialistId, {
             ...specialist,
-            category: toCategory(specialist.specialty),
+            // The server's category wins. `toCategory` stays as the fallback for
+            // rows predating the category migration, which still carry only the
+            // free-text specialty — guessing from that is strictly worse than
+            // being told, so it is second, not first.
+            category:
+              fromServerCategory(specialist.category) ?? toCategory(specialist.specialty),
+            storyProfile: toProfile(specialist.profile),
           })
         }
       }

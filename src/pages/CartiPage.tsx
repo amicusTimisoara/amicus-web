@@ -113,6 +113,7 @@ function BookGrid({
           key={book.specialistId}
           name={book.fullName}
           category={book.category}
+          storyProfile={book.storyProfile}
           description={book.bio}
           freeCount={freeBySpecialist.get(book.specialistId) ?? 0}
           to={`/carti/${book.specialistId}`}
