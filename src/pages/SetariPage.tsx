@@ -12,7 +12,7 @@ import { clearMeCache, setMeCache, useMe } from '../lib/useMe'
 
 export function SetariPage() {
   const navigate = useNavigate()
-  const me = useMe()
+  const { me, status, retry } = useMe()
   const signedIn = useSignedIn()
 
   if (!signedIn) {
@@ -44,15 +44,30 @@ export function SetariPage() {
         </span>
         <div className="min-w-0">
           <p className="t-body m-0 truncate text-ink">
-            {me?.displayName ?? me?.email ?? 'Se încarcă…'}
+            {me?.displayName ??
+              me?.email ??
+              (status === 'error' ? 'Profil indisponibil' : 'Se încarcă…')}
           </p>
-          <p className="t-body-sm m-0 text-ink-muted">
-            {me
-              ? me.isEmailConfirmed
-                ? 'Email confirmat'
-                : 'Email neconfirmat'
-              : ' '}
-          </p>
+          {status === 'error' ? (
+            <p className="t-body-sm m-0 text-danger">
+              Nu am putut încărca profilul.{' '}
+              <button
+                type="button"
+                onClick={retry}
+                className="cursor-pointer bg-transparent p-0 text-ink underline"
+              >
+                Încearcă din nou
+              </button>
+            </p>
+          ) : (
+            <p className="t-body-sm m-0 text-ink-muted">
+              {me
+                ? me.isEmailConfirmed
+                  ? 'Email confirmat'
+                  : 'Email neconfirmat'
+                : ' '}
+            </p>
+          )}
         </div>
       </div>
 
@@ -86,7 +101,7 @@ export function SetariPage() {
 }
 
 function DisplayName() {
-  const me = useMe()
+  const { me, status } = useMe()
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
@@ -138,12 +153,18 @@ function DisplayName() {
               setDone(false)
             }}
             placeholder="ex. Ana P."
+            disabled={!me}
             className={cx(FIELD_BASE, FIELD_IDLE)}
           />
         </label>
         {error && <p className="t-body-sm m-0 text-danger">{error}</p>}
         {done && <p className="t-body-sm m-0 text-ink-muted">Salvat.</p>}
-        <Button type="submit" disabled={busy}>
+        {status === 'error' && (
+          <p className="t-body-sm m-0 text-ink-muted">
+            Nu putem încărca numele actual, așa că nu îl putem nici salva.
+          </p>
+        )}
+        <Button type="submit" disabled={busy || !me}>
           {busy ? 'Se salvează…' : 'Salvează numele'}
         </Button>
       </form>
