@@ -228,7 +228,14 @@ export const api = {
       body: JSON.stringify({ idToken }),
     }),
 
-  me: () => request<AccountInfo>('/auth/manage/info'),
+  me: () => request<AccountInfo>('/account/me'),
+
+  /** Update the signed-in user's own profile (display name; empty clears it). */
+  updateAccount: (displayName: string) =>
+    request<AccountInfo>('/account/me', {
+      method: 'PATCH',
+      body: JSON.stringify({ displayName }),
+    }),
 
   /**
    * Identity's manage endpoint takes the old password alongside the new one —
@@ -244,6 +251,8 @@ export const api = {
 
 export interface AccountInfo {
   email: string
+  displayName: string | null
+  photoUrl: string | null
   isEmailConfirmed: boolean
 }
 

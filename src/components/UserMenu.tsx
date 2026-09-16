@@ -12,9 +12,9 @@ import { clearMeCache, useMe } from '../lib/useMe'
  * a phone and unreachable from a keyboard; click alone would feel sticky on a
  * desktop. So hover is an enhancement layered on a control that works without it.
  *
- * The avatar draws initials rather than a photo because the API has no picture
+ * The avatar shows the account photo when there is one (Google sign-in captures
  * for an account — `AppUser` carries only DisplayName and CreatedAt, and Google
- * sign-in does not capture one. `photoUrl` is here so a real picture drops in
+ * it) and falls back to initials for a password account, which has no photo.
  * without touching any caller.
  */
 export function UserMenu() {
@@ -29,7 +29,7 @@ export function UserMenu() {
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const menuId = useId()
 
-  const photoUrl: string | null = null
+  const photoUrl = me?.photoUrl ?? null
   const initials = me ? initialsFromEmail(me.email) : '·'
 
   // Close on click outside and on Escape. Without these the panel survives
@@ -113,7 +113,7 @@ export function UserMenu() {
         )}
       >
         {photoUrl ? (
-          <img src={photoUrl} alt="" className="size-full object-cover" />
+          <img src={photoUrl} alt={me?.displayName ?? me?.email ?? ''} className="size-full object-cover" />
         ) : (
           <span className="t-label-sm text-ink-soft">{initials}</span>
         )}

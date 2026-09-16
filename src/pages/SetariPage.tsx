@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button, ButtonLink } from '../components/Button'
 import { ApiError, PASSWORD_MIN_LENGTH, api, auth } from '../lib/api'
 import { cx } from '../lib/cx'
 import { FIELD_BASE, FIELD_IDLE } from '../lib/forms'
 import { initialsFromEmail } from '../lib/initials'
-import { clearMeCache, useMe } from '../lib/useMe'
+import { clearMeCache, setMeCache, useMe } from '../lib/useMe'
 
 export function SetariPage() {
   const navigate = useNavigate()
@@ -31,12 +31,18 @@ export function SetariPage() {
       <div className="mt-8 flex items-center gap-4 rounded-lg border border-line bg-raised p-5">
         <span
           aria-hidden="true"
-          className="t-label flex size-14 shrink-0 items-center justify-center rounded-full bg-sunken text-ink-soft"
+          className="t-label flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sunken text-ink-soft"
         >
-          {me ? initialsFromEmail(me.email) : '·'}
+          {me?.photoUrl ? (
+            <img src={me.photoUrl} alt="" className="size-full object-cover" />
+          ) : (
+            <span>{me ? initialsFromEmail(me.email) : '·'}</span>
+          )}
         </span>
         <div className="min-w-0">
-          <p className="t-body m-0 truncate text-ink">{me?.email ?? 'Se încarcă…'}</p>
+          <p className="t-body m-0 truncate text-ink">
+            {me?.displayName ?? me?.email ?? 'Se încarcă…'}
+          </p>
           <p className="t-body-sm m-0 text-ink-muted">
             {me
               ? me.isEmailConfirmed
@@ -47,11 +53,7 @@ export function SetariPage() {
         </div>
       </div>
 
-      {/*
-        No display-name or photo field here: the API stores DisplayName but
-        exposes no endpoint to read or set it, and has no avatar at all. Until
-        that exists, a form for either would be a control that does nothing.
-      */}
+      <DisplayName />
 
       <ChangePassword />
 
@@ -75,6 +77,72 @@ export function SetariPage() {
         </Link>
       </p>
     </section>
+  )
+}
+
+function DisplayName() {
+  const me = useMe()
+  const [name, setName] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [done, setDone] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const seeded = useRef(false)
+
+  // Seed the field once, when the account first loads (useMe is null on the
+  // first render). Guarded by a ref so re-seeding never fights a deliberate edit
+  // — clearing the field to save an empty name must stick.
+  useEffect(() => {
+    if (me && !seeded.current) {
+      seeded.current = true
+      setName(me.displayName ?? '')
+    }
+  }, [me])
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setBusy(true)
+    setError(null)
+    setDone(false)
+    try {
+      const info = await api.updateAccount(name.trim())
+      setMeCache(info) // updates the header avatar/name immediately
+      setDone(true)
+    } catch {
+      setError('Nu am putut salva numele. Încearcă din nou.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="mt-8">
+      <h2 className="t-h2 m-0 text-ink">Numele afișat</h2>
+      <p className="t-body-sm mt-1 text-ink-muted">
+        Cum apari în aplicație. Lasă gol ca să folosești adresa de email.
+      </p>
+
+      <form onSubmit={onSubmit} className="mt-4 flex flex-col gap-3">
+        <label className="flex flex-col gap-1.5">
+          <span className="t-label-sm text-ink-soft">Nume</span>
+          <input
+            type="text"
+            value={name}
+            maxLength={80}
+            onChange={(e) => {
+              setName(e.target.value)
+              setDone(false)
+            }}
+            placeholder="ex. Ana P."
+            className={cx(FIELD_BASE, FIELD_IDLE)}
+          />
+        </label>
+        {error && <p className="t-body-sm m-0 text-danger">{error}</p>}
+        {done && <p className="t-body-sm m-0 text-ink-muted">Salvat.</p>}
+        <Button type="submit" disabled={busy}>
+          {busy ? 'Se salvează…' : 'Salvează numele'}
+        </Button>
+      </form>
+    </div>
   )
 }
 
