@@ -12,14 +12,17 @@ import { clearMeCache, useMe } from '../lib/useMe'
  * a phone and unreachable from a keyboard; click alone would feel sticky on a
  * desktop. So hover is an enhancement layered on a control that works without it.
  *
- * The avatar shows the account photo when there is one (Google sign-in captures
- * for an account — `AppUser` carries only DisplayName and CreatedAt, and Google
- * it) and falls back to initials for a password account, which has no photo.
- * without touching any caller.
+ * The avatar shows the account photo when there is one — Google sign-in captures
+ * it — and falls back to initials for a password account, which has none.
+ *
+ * When the profile can't be fetched the panel says so and offers a retry, rather
+ * than sitting on a placeholder: the person is signed in (their token still
+ * works everywhere else), so "…" would be describing a request that already
+ * failed.
  */
 export function UserMenu() {
   const navigate = useNavigate()
-  const me = useMe()
+  const { me, status, retry } = useMe()
   const [open, setOpen] = useState(false)
   // A menu opened by clicking stays open until it is dismissed deliberately.
   // Without this, moving the pointer off the circle closes a menu the person
@@ -130,7 +133,21 @@ export function UserMenu() {
         >
           <div className="border-b border-line px-4 py-3">
             <p className="t-label-sm m-0 text-ink-muted">Conectat ca</p>
-            <p className="t-body m-0 truncate text-ink">{me?.email ?? '…'}</p>
+            {status === 'error' ? (
+              <>
+                <p className="t-body-sm m-0 text-danger">Nu am putut încărca profilul.</p>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={retry}
+                  className="t-body-sm mt-1 cursor-pointer bg-transparent p-0 text-ink underline"
+                >
+                  Încearcă din nou
+                </button>
+              </>
+            ) : (
+              <p className="t-body m-0 truncate text-ink">{me?.email ?? '…'}</p>
+            )}
             {me && !me.isEmailConfirmed && (
               <p className="t-body-sm m-0 mt-1 text-ink-muted">Email neconfirmat</p>
             )}
