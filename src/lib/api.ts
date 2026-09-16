@@ -261,6 +261,20 @@ export const api = {
 
   me: () => request<AccountInfo>('/account/me'),
 
+  /**
+   * The signed-in user's own application. Resolves to undefined when they have
+   * never applied — the server answers 204, not 404, because having no
+   * application is a normal state rather than a missing resource.
+   */
+  myApplication: () =>
+    request<SpecialistApplication | undefined>('/account/specialist-application'),
+
+  applyAsCarte: (body: SubmitApplication) =>
+    request<SpecialistApplication>('/account/specialist-application', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
   /** Update the signed-in user's own profile (display name; empty clears it). */
   updateAccount: (displayName: string) =>
     request<AccountInfo>('/account/me', {
@@ -285,6 +299,52 @@ export interface AccountInfo {
   displayName: string | null
   photoUrl: string | null
   isEmailConfirmed: boolean
+  /**
+   * True once an approved application has linked this account to a Specialist.
+   * Travels with the profile rather than being a second request, because the
+   * header needs it on every page to mark the avatar.
+   */
+  isCarte: boolean
+}
+
+/** The six advice domains, as the server names them. */
+export type ServerCategory =
+  | 'Spiritual' | 'Mentorat' | 'Medical' | 'Juridic' | 'Cariera' | 'Social'
+
+/** How a carte is willing to meet. Length is NOT here — that belongs to the slot. */
+export type MeetingFormat = 'Fizic' | 'Online' | 'Ambele'
+
+export type ApplicationStatus = 'Pending' | 'Approved' | 'Rejected'
+
+export interface SpecialistApplication {
+  id: string
+  fullName: string
+  phone: string
+  specialty: string
+  category: string
+  profile: string | null
+  story: string
+  format: MeetingFormat
+  speaksEnglish: boolean
+  acceptsSmallGroups: boolean
+  status: ApplicationStatus
+  /** Why it was refused, in the committee's words. Null unless rejected. */
+  reviewNote: string | null
+  createdAt: string
+  reviewedAt: string | null
+  specialistId: string | null
+}
+
+export interface SubmitApplication {
+  fullName: string
+  phone: string
+  specialty: string
+  category: ServerCategory
+  profile: string | null
+  story: string
+  format: MeetingFormat
+  speaksEnglish: boolean
+  acceptsSmallGroups: boolean
 }
 
 /** Minimum password length, mirroring `IdentitySetup.cs`. */
