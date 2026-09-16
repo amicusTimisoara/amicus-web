@@ -10,10 +10,18 @@ import { api, auth, type AccountInfo } from './api'
  */
 let cached: AccountInfo | null = null
 let inFlight: Promise<AccountInfo> | null = null
+const listeners = new Set<(v: AccountInfo | null) => void>()
 
 export function clearMeCache() {
   cached = null
   inFlight = null
+  listeners.forEach((fn) => fn(null))
+}
+
+/** Update the cached account (e.g. after a profile edit) and notify every mount. */
+export function setMeCache(info: AccountInfo) {
+  cached = info
+  listeners.forEach((fn) => fn(info))
 }
 
 export function useMe(): AccountInfo | null {
@@ -24,6 +32,13 @@ export function useMe(): AccountInfo | null {
   // effect that only ran on mount would keep showing an anonymous avatar until
   // a full page reload.
   const token = auth.token
+
+  useEffect(() => {
+    listeners.add(setMe)
+    return () => {
+      listeners.delete(setMe)
+    }
+  }, [])
 
   useEffect(() => {
     if (!token || cached) return
