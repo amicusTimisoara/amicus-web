@@ -18,8 +18,8 @@ export function LoginPage() {
     setBusy(true)
     setError(null)
     try {
-      const { accessToken } = await api.loginWithPassword(email, password)
-      auth.set(accessToken)
+      const { accessToken, refreshToken } = await api.loginWithPassword(email, password)
+      auth.set(accessToken, refreshToken)
       navigate('/')
     } catch (err) {
       setError(
