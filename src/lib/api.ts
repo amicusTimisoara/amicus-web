@@ -8,6 +8,7 @@
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/api'
 
 const TOKEN_KEY = 'amicus.accessToken'
+const REFRESH_KEY = 'amicus.refreshToken'
 
 /**
  * Anything that wants to re-render when the session changes.
@@ -25,9 +26,30 @@ export const auth = {
       return null
     }
   },
-  set(token: string) {
+  /**
+   * The long-lived half of the session.
+   *
+   * Access tokens from MapIdentityApi last an hour. Storing only that one meant
+   * a student who signed in at 10:00 was silently signed out by 11:00 — and
+   * worse, only half signed out: the header still saw a string in localStorage
+   * and drew the avatar, while every actual request 401'd. This is what lets the
+   * hour be renewed instead.
+   *
+   * In localStorage, like the access token, and exposed to XSS in exactly the
+   * same way — no worse than before, but no better either. A cookie-based
+   * session would be the real answer if that ever matters.
+   */
+  get refreshToken(): string | null {
+    try {
+      return localStorage.getItem(REFRESH_KEY)
+    } catch {
+      return null
+    }
+  },
+  set(token: string, refreshToken?: string | null) {
     try {
       localStorage.setItem(TOKEN_KEY, token)
+      if (refreshToken) localStorage.setItem(REFRESH_KEY, refreshToken)
     } catch {
       /* private mode / storage disabled — the session just won't persist */
     }
@@ -36,6 +58,7 @@ export const auth = {
   clear() {
     try {
       localStorage.removeItem(TOKEN_KEY)
+      localStorage.removeItem(REFRESH_KEY)
     } catch {
       /* ignore */
     }
@@ -75,7 +98,51 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+/**
+ * One renewal at a time.
+ *
+ * A page load fires several requests at once — the profile, the board, the
+ * catalogue. If the hour has just run out they all 401 together, and without
+ * this each would start its own refresh, so a single expiry would cost three or
+ * four round trips and three or four rotations of the refresh token.
+ *
+ * Measured against the real API rather than assumed: Identity does rotate the
+ * refresh token on every use, but the previous one KEEPS working — the tokens
+ * are stateless encrypted tickets, valid until they expire, with nothing to
+ * revoke them. So a concurrent double refresh would not break the session. This
+ * is about not making four requests where one will do, not about correctness.
+ */
+let refreshing: Promise<boolean> | null = null
+
+async function renewSession(): Promise<boolean> {
+  const refreshToken = auth.refreshToken
+  if (!refreshToken) return false
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    })
+
+    if (!res.ok) {
+      // The refresh token itself is expired or revoked. This is the one place
+      // that decides a session is genuinely over, so every caller agrees.
+      auth.clear()
+      return false
+    }
+
+    const body = (await res.json()) as AccessTokenResponse
+    auth.set(body.accessToken, body.refreshToken)
+    return true
+  } catch {
+    // Offline, or the server is down. Not evidence the session is dead, so the
+    // tokens stay and the next attempt can succeed.
+    return false
+  }
+}
+
+async function request<T>(path: string, init: RequestInit = {}, retried = false): Promise<T> {
   const headers = new Headers(init.headers)
   const token = auth.token
   if (token) headers.set('Authorization', `Bearer ${token}`)
@@ -84,6 +151,34 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
 
   const res = await fetch(`${API_BASE}${path}`, { ...init, headers })
+
+  // An expired hour should be invisible: renew and run the request again.
+  //
+  // Only when a token was actually sent — a 401 on a request that carried none
+  // just means "sign in", and there is nothing to renew or clear. And never for
+  // /auth/refresh itself, which would recurse.
+  if (res.status === 401 && token && !retried && path !== '/auth/refresh') {
+    // Someone else already renewed while this request was in flight, so the
+    // token it was sent with is simply stale. Retry with the new one rather than
+    // paying for a second refresh that would return an equivalent token.
+    if (auth.token !== token) {
+      return request<T>(path, init, true)
+    }
+
+    refreshing ??= renewSession().finally(() => {
+      refreshing = null
+    })
+
+    if (await refreshing) {
+      return request<T>(path, init, true)
+    }
+
+    // Couldn't renew, and `renewSession` has already cleared the session if the
+    // refresh token was the problem. If there was no refresh token at all — a
+    // session stored before this existed — clear it here, so the header stops
+    // claiming someone is signed in while every page says otherwise.
+    if (!auth.refreshToken) auth.clear()
+  }
 
   if (!res.ok) {
     // Bubble up a typed error so callers can branch on 401 (re-auth) vs the rest.

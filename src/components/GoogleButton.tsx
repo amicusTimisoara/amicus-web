@@ -60,8 +60,8 @@ export function GoogleButton() {
           client_id: CLIENT_ID,
           callback: async ({ credential }) => {
             try {
-              const { accessToken } = await api.loginWithGoogle(credential)
-              auth.set(accessToken)
+              const { accessToken, refreshToken } = await api.loginWithGoogle(credential)
+              auth.set(accessToken, refreshToken)
               navigate('/')
             } catch (err) {
               setError(

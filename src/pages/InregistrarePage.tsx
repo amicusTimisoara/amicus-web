@@ -34,8 +34,8 @@ export function InregistrarePage() {
       await api.register(email, password)
       // Identity's register returns no token, so sign in straight away — making
       // someone type the same password twice more would be a poor welcome.
-      const { accessToken } = await api.loginWithPassword(email, password)
-      auth.set(accessToken)
+      const { accessToken, refreshToken } = await api.loginWithPassword(email, password)
+      auth.set(accessToken, refreshToken)
       navigate('/')
     } catch (err) {
       setError(registerErrorMessage(err))

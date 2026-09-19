@@ -29,8 +29,8 @@ export function ResetareParolaPage() {
     try {
       await api.resetPassword(email, code, password)
       // Reset done — sign in with the new password so the student lands logged in.
-      const { accessToken } = await api.loginWithPassword(email, password)
-      auth.set(accessToken)
+      const { accessToken, refreshToken } = await api.loginWithPassword(email, password)
+      auth.set(accessToken, refreshToken)
       navigate('/')
     } catch (err) {
       setError(
