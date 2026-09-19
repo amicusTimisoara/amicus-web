@@ -1,8 +1,8 @@
 import { useSearchParams } from 'react-router-dom'
 import { BookCard } from '../components/BookCard'
 import { ButtonLink } from '../components/Button'
-import { Tag } from '../components/Tag'
-import { CATEGORIES, type Category } from '../lib/categories'
+import { Shelf } from '../components/Shelf'
+import { type Category } from '../lib/categories'
 import { useBooks, type Book } from '../lib/useBooks'
 import { useMonthBoard } from '../lib/useMonthBoard'
 
@@ -45,16 +45,7 @@ export function CartiPage() {
         „Fiecare om are o poveste care merită ascultată.”
       </p>
 
-      <div className="mb-10 flex flex-wrap gap-2.5">
-        {CATEGORIES.map((category) => (
-          <Tag
-            key={category}
-            category={category}
-            active={active === null || active === category}
-            onClick={() => toggle(category)}
-          />
-        ))}
-      </div>
+      <Shelf active={active} onToggle={toggle} />
 
       {books.status === 'loading' && (
         <p className="t-body text-ink-muted">Se încarcă cărțile…</p>
