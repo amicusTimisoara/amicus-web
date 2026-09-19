@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { QRCodeSVG } from 'qrcode.react'
 import { Button, ButtonLink } from '../components/Button'
 import { Tag } from '../components/Tag'
 import { ApiError, api, type BookingDetail } from '../lib/api'
@@ -181,34 +180,6 @@ function BookingCard({
         <p className="t-body-sm m-0 text-ink-muted">Ai notat: „{booking.topic}”</p>
       )}
 
-      {active && (
-        <>
-          <div className="self-center rounded-md border border-line bg-raised p-4">
-            <QRCodeSVG
-              value={booking.checkInCode}
-              size={168}
-              // Tokens are CSS variables, which an SVG `fill` cannot resolve —
-              // these two are the literal values of --color-ink / --color-raised.
-              fgColor="#1f1b16"
-              bgColor="#ffffff"
-              marginSize={0}
-            />
-          </div>
-
-          <div className="flex w-full flex-col items-center gap-1 rounded-md bg-sunken px-6 py-3">
-            <span className="t-num text-[22px] tracking-[0.1em] text-ink">
-              {formatCode(booking.checkInCode)}
-            </span>
-            <span className="t-body-sm text-ink-muted">codul tău de acces</span>
-          </div>
-
-          <p className="t-body-sm m-0 text-ink-muted">
-            Arată codul la intrare. Dacă nu merge camera, poate fi citit cu voce tare — de
-            asta nu conține litere care se confundă.
-          </p>
-        </>
-      )}
-
       {error && (
         <p className="t-body-sm m-0 text-danger" role="alert">
           {error}
@@ -226,9 +197,4 @@ function BookingCard({
       </Link>
     </article>
   )
-}
-
-/** "K3M7QP9X2R" -> "K3M7 QP9X 2R", so it can be read aloud without losing place. */
-function formatCode(code: string): string {
-  return code.replace(/(.{4})/g, '$1 ').trim()
 }
