@@ -2,19 +2,23 @@ import { CATEGORIES, CATEGORY_CLASS, CATEGORY_LABEL, type Category } from '../li
 import { cx } from '../lib/cx'
 
 /**
- * Heights differ per category, but only slightly.
+ * Spines differ in both dimensions, but only slightly.
  *
  * Six identical bars read as a chart, so the shelf needs some unevenness to read
- * as books at all. Too much and it reads as a toy — the earlier version ranged
- * 120–146 and looked like a children's shelf. The values match BookSpine in Figma.
+ * as books at all. Too much and it reads as a toy — an earlier version ranged
+ * 120–146 and looked like a children's shelf. Varying the width as well as the
+ * height was what finally sold it: books differ in thickness, and six equal
+ * widths was half of why these still looked like tabs.
+ *
+ * The values match the BookSpine component in Figma.
  */
-const SPINE_HEIGHT: Record<Category, number> = {
-  spiritual: 124,
-  mentorat: 116,
-  medical: 132,
-  juridic: 120,
-  cariera: 112,
-  social: 128,
+const SPINE: Record<Category, { w: number; h: number }> = {
+  spiritual: { w: 36, h: 124 },
+  mentorat: { w: 32, h: 116 },
+  medical: { w: 38, h: 132 },
+  juridic: { w: 34, h: 120 },
+  cariera: { w: 33, h: 112 },
+  social: { w: 37, h: 128 },
 }
 
 interface ShelfProps {
@@ -40,10 +44,10 @@ interface ShelfProps {
  */
 export function Shelf({ active, onToggle }: ShelfProps) {
   return (
-    // As wide as its books. A board running the full column left them huddled
-    // at one end of a bare plank.
+    // As wide as its books plus the board's overhang. A board running the full
+    // column left them huddled at one end of a bare plank.
     <div className="mb-10 w-fit select-none">
-      <div className="flex items-end gap-[5px]">
+      <div className="flex items-end gap-[5px] px-5">
         {CATEGORIES.map((category) => {
           const style = CATEGORY_CLASS[category]
           const chosen = active === category
@@ -54,9 +58,9 @@ export function Shelf({ active, onToggle }: ShelfProps) {
               type="button"
               onClick={() => onToggle(category)}
               aria-pressed={chosen}
-              style={{ height: SPINE_HEIGHT[category] }}
+              style={{ width: SPINE[category].w, height: SPINE[category].h }}
               className={cx(
-                'group relative w-9 shrink-0 cursor-pointer rounded-sm border p-0',
+                'group relative shrink-0 cursor-pointer rounded-sm border p-0',
                 'transition-[transform,opacity] duration-200 ease-out',
                 'motion-reduce:transition-none',
                 'focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2',
@@ -70,12 +74,30 @@ export function Shelf({ active, onToggle }: ShelfProps) {
                 pushedBack && 'opacity-50',
               )}
             >
+              {/*
+                One colour for every mark on the spine. Saturated, the lettering
+                and rules flip to the page colour — near-white on paper and
+                near-black on the dark ground, the inverse of how the category
+                colours are tuned.
+              */}
+              <span
+                aria-hidden="true"
+                className={cx('absolute inset-0', chosen ? 'text-page' : style.text)}
+              >
+                {/* The crease where a cover folds over the block. A rectangle
+                    with a line down one side reads as a spine; without it, it
+                    is a rectangle. */}
+                <span className="absolute top-[7px] bottom-[7px] left-[5px] w-px bg-current opacity-45" />
+                {/* Raised bands, where the binding is reinforced. They wrap the
+                    whole spine — stopping them clear of the hinge turned each
+                    one into a bracket pointing at the title. */}
+                <span className="absolute top-[11px] right-[3px] left-[3px] h-px bg-current opacity-40" />
+                <span className="absolute right-[3px] bottom-[11px] left-[3px] h-px bg-current opacity-40" />
+              </span>
+
               <span
                 className={cx(
-                  't-tag absolute inset-0 grid place-items-center tracking-[0.1em]',
-                  // Saturated spine, so the lettering flips to the page colour —
-                  // which is near-white on paper and near-black on the dark
-                  // ground, the inverse of how the category colours are tuned.
+                  't-tag absolute inset-0 grid place-items-center pl-1 tracking-[0.1em]',
                   chosen ? 'text-page' : style.text,
                 )}
               >
@@ -91,9 +113,14 @@ export function Shelf({ active, onToggle }: ShelfProps) {
         })}
       </div>
 
-      {/* A hairline. The first version was a 7px plank over a 10px recess —
-          furniture drawn at the same weight as the books standing on it. */}
-      <div className="h-px bg-line" />
+      {/*
+        The board. Three things it was missing: a thickness you can see, an
+        overhang past the books at each end, and air between it and the book
+        bottoms. Without those it read as an underline belonging to the heading
+        above rather than furniture the books stand on.
+      */}
+      <div className="mt-[3px] h-[3px] rounded-[1px] bg-line-mid shadow-[0_2px_4px_-1px_rgba(31,27,22,0.28)]" />
     </div>
   )
 }
+
