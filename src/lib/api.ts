@@ -279,6 +279,8 @@ export interface BookingDetail {
   eventName: string
   specialistName: string
   specialty: string
+  /** A `SpecialistCategory` name. Never guess one from `specialty`. */
+  category: string
   location: string | null
 }
 
