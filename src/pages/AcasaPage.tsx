@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Button, ButtonLink } from '../components/Button'
 import { DayCell, type DayMark } from '../components/DayCell'
 import { Dot } from '../components/Dot'
-import { SlotRow } from '../components/SlotRow'
-import { bookingErrorMessage, api } from '../lib/api'
+import { BookableSlot } from '../components/BookableSlot'
 import { CATEGORIES, CATEGORY_LABEL } from '../lib/categories'
+import { cx } from '../lib/cx'
 import {
   addMonths,
   dayMonthLabel,
@@ -14,7 +14,6 @@ import {
   todayKey,
   weekdayLongFromKey,
   WEEKDAYS_SHORT_RO,
-  zonedTime,
   type YearMonth,
 } from '../lib/date'
 import { useMonthBoard, type DaySlot } from '../lib/useMonthBoard'
@@ -37,6 +36,13 @@ export function AcasaPage() {
   const [month, setMonth] = useState<YearMonth>(thisMonth)
   const [params, setParams] = useSearchParams()
   const board = useMonthBoard(month)
+  const panelRef = useRef<HTMLElement>(null)
+  // Set by a tap on a day, consumed by the effect below. The scroll cannot
+  // happen in the click handler: at that moment the panel is still the one-line
+  // placeholder, the page is 150px shorter than it is about to be, and the
+  // browser clamps a smooth scroll to the page bottom as it was when the
+  // animation started — so it stopped well short of the panel.
+  const wantsPanel = useRef(false)
 
   const selectedDay = params.get('zi')
 
@@ -53,6 +59,32 @@ export function AcasaPage() {
     setParams(next, { replace: true })
   }
 
+  /**
+   * Picking a day out of the grid, as opposed to clearing one.
+   *
+   * Below lg the panel sits under the entire calendar, which on a phone is off
+   * the bottom of the screen — tapping a day looked like it had done nothing.
+   */
+  function pickDay(key: string | null) {
+    if (key) wantsPanel.current = true
+    selectDay(key)
+  }
+
+  useEffect(() => {
+    if (!wantsPanel.current) return
+    wantsPanel.current = false
+    const panel = panelRef.current
+    // Desktop shows the grid and the panel side by side, so there is nothing to
+    // scroll to and the jump would only be disorienting.
+    if (!panel || window.matchMedia('(min-width: 64rem)').matches) return
+    panel.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'auto'
+        : 'smooth',
+      block: 'start',
+    })
+  }, [selectedDay])
+
   function step(delta: number) {
     setMonth((m) => addMonths(m, delta))
     selectDay(null)
@@ -64,7 +96,7 @@ export function AcasaPage() {
       <section className="px-5 pb-16 sm:px-12 lg:px-25">
         <div className="mb-6 h-px w-full bg-line" />
 
-        <div className="grid gap-10 lg:grid-cols-[1fr_440px] lg:items-start">
+        <div className="grid gap-10 lg:grid-cols-[1fr_440px] lg:grid-rows-[auto_1fr] lg:items-start">
           <div>
             <div className="mb-6 flex items-center justify-between gap-4">
               <h2 className="t-h1 m-0 text-ink sm:text-[26px]">{monthLabel(month)}</h2>
@@ -102,7 +134,7 @@ export function AcasaPage() {
                   byDay={byDay}
                   timeZone={timeZone}
                   selectedDay={selectedDay}
-                  onSelect={selectDay}
+                  onSelect={pickDay}
                 />
 
                 {board.status === 'loading' && (
@@ -126,19 +158,36 @@ export function AcasaPage() {
                     </Button>
                   </div>
                 )}
-
-                <Legend />
               </>
             )}
           </div>
 
+          {/*
+            Second grid child, and on a phone that puts it directly under the
+            calendar — which is the point.
+            On lg it spans both rows so the legend can sit right under the
+            calendar instead of below the taller of the two columns. The second
+            row has to be `1fr` for that: grid grows auto rows to fit a spanning
+            item, so with two auto rows a long list of slots pushed the legend
+            340px down the page, leaving a hole under the calendar. A spanning
+            item is not allowed to grow a flexible track that way, so all the
+            extra height lands in row two, where the panel actually is.
+          */}
           {board.status !== 'unauthenticated' && (
             <DayPanel
+              ref={panelRef}
               dayKey={selectedDay}
               slots={selectedDay ? (byDay.get(selectedDay) ?? []) : []}
               timeZone={timeZone}
               onBooked={board.refresh}
+              className="lg:col-start-2 lg:row-start-1 lg:row-span-2"
             />
+          )}
+
+          {/* Last thing on the page on a phone: it explains the calendar, so
+              it has nothing to say until you have scrolled past both. */}
+          {board.status !== 'unauthenticated' && (
+            <Legend className="lg:col-start-1 lg:row-start-2" />
           )}
         </div>
       </section>
@@ -157,7 +206,7 @@ function Hero() {
         </p>
         <p className="t-body-lg m-0 max-w-[48ch] text-ink-soft">
           Aici „cărțile” sunt oameni. Alegi o poveste, rezervi o jumătate de oră și stai de
-          vorbă. Fără etichete, fără grabă — ascultarea e singura regulă.
+          vorbă. Fără etichete, fără grabă, doar conexiune pură.
         </p>
         <ButtonLink to="/carti">Vezi cărțile</ButtonLink>
       </div>
@@ -194,7 +243,8 @@ interface MonthGridProps {
   byDay: ReadonlyMap<string, DaySlot[]>
   timeZone: string
   selectedDay: string | null
-  onSelect: (key: string) => void
+  /** Null clears the selection — tapping the chosen day again puts it back. */
+  onSelect: (key: string | null) => void
 }
 
 function MonthGrid({ month, byDay, timeZone, selectedDay, onSelect }: MonthGridProps) {
@@ -226,7 +276,10 @@ function MonthGrid({ month, byDay, timeZone, selectedDay, onSelect }: MonthGridP
               isToday={cell.key === today}
               isSelected={cell.key === selectedDay}
               marks={marks}
-              onSelect={() => onSelect(cell.key)}
+              // Tapping the chosen day again clears it. Without this a day
+              // could be picked but never put back, so the only way out of the
+              // panel was to change month and come back.
+              onSelect={() => onSelect(cell.key === selectedDay ? null : cell.key)}
             />
           )
         })}
@@ -235,9 +288,9 @@ function MonthGrid({ month, byDay, timeZone, selectedDay, onSelect }: MonthGridP
   )
 }
 
-function Legend() {
+function Legend({ className }: { className?: string }) {
   return (
-    <div className="mt-8 rounded-lg border border-line bg-raised p-4">
+    <div className={cx('rounded-lg border border-line bg-raised p-4', className)}>
       <p className="t-label m-0 text-ink">Cum citești calendarul</p>
 
       <div className="mt-3 flex gap-6">
@@ -264,22 +317,24 @@ function Legend() {
 }
 
 interface DayPanelProps {
+  ref?: React.Ref<HTMLElement>
   dayKey: string | null
   slots: DaySlot[]
   timeZone: string
   onBooked: () => void
+  className?: string
 }
 
-function DayPanel({ dayKey, slots, timeZone, onBooked }: DayPanelProps) {
-  const navigate = useNavigate()
+function DayPanel({ ref, dayKey, slots, timeZone, onBooked, className }: DayPanelProps) {
+  // Which slot is open, and nothing else — booking itself lives in BookableSlot.
   const [chosen, setChosen] = useState<string | null>(null)
-  const [topic, setTopic] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   if (!dayKey) {
     return (
-      <aside className="rounded-xl border border-line bg-raised p-7">
+      <aside
+        ref={ref}
+        className={cx('scroll-mt-4 rounded-xl border border-line bg-raised p-7', className)}
+      >
         <p className="t-body m-0 text-ink-muted">
           Alege o zi din calendar ca să vezi întâlnirile disponibile.
         </p>
@@ -288,29 +343,17 @@ function DayPanel({ dayKey, slots, timeZone, onBooked }: DayPanelProps) {
   }
 
   const free = slots.filter((s) => s.slot.isAvailable).length
-  const chosenSlot = slots.find((s) => s.slot.id === chosen)
-
-  async function book() {
-    if (!chosenSlot) return
-    setBusy(true)
-    setError(null)
-    try {
-      const booking = await api.createBooking(chosenSlot.slot.id, topic)
-      onBooked()
-      navigate(`/rezervarile-mele?noua=${booking.id}`)
-    } catch (err) {
-      // A lost race is not really an error the student caused — refresh the
-      // board underneath them so the slot they lost stops looking available.
-      setError(bookingErrorMessage(err))
-      setChosen(null)
-      onBooked()
-    } finally {
-      setBusy(false)
-    }
-  }
 
   return (
-    <aside className="flex flex-col gap-4 rounded-xl border border-line bg-raised p-7">
+    <aside
+      ref={ref}
+      // scroll-mt so the smooth scroll from a day tap leaves a little air above
+      // the panel instead of jamming it against the top of the viewport.
+      className={cx(
+        'flex scroll-mt-4 flex-col gap-4 rounded-xl border border-line bg-raised p-7',
+        className,
+      )}
+    >
       <span className="t-tag text-ink-muted">{weekdayLongFromKey(dayKey)}</span>
       <h3 className="t-h1 m-0 text-ink">{dayMonthLabel(dayKey)}</h3>
       <p className="t-body m-0 text-ink-muted">
@@ -318,74 +361,21 @@ function DayPanel({ dayKey, slots, timeZone, onBooked }: DayPanelProps) {
         {free === 0 ? 'niciun loc liber' : free === 1 ? 'un loc liber' : `${free} locuri libere`}
       </p>
 
-      {slots.map((entry) => {
-        const state = entry.slot.isMine
-          ? 'al-tau'
-          : entry.slot.isAvailable
-            ? 'liber'
-            : 'ocupat'
-        return (
-          <div key={entry.slot.id} className="flex flex-col gap-3">
-            <SlotRow
-              time={zonedTime(entry.slot.startsAt, timeZone)}
-              duration={`${entry.minutes} min`}
-              title={entry.specialist.fullName}
-              category={entry.category}
-              tagTo={`/carti/${entry.specialist.specialistId}`}
-              state={state}
-              selected={chosen === entry.slot.id}
-              onSelect={
-                state === 'liber'
-                  ? () => {
-                      setChosen((c) => (c === entry.slot.id ? null : entry.slot.id))
-                      setError(null)
-                    }
-                  : undefined
-              }
-            />
-
-            {chosen === entry.slot.id && (
-              <div className="flex flex-col gap-3 rounded-lg bg-sunken p-4">
-                {entry.specialist.bio && (
-                  <p className="t-body m-0 text-ink-soft">{entry.specialist.bio}</p>
-                )}
-                {entry.specialist.location && (
-                  <p className="t-body-sm m-0 text-ink-muted">
-                    {entry.specialist.location} · {entry.minutes} de minute
-                  </p>
-                )}
-
-                <label className="flex flex-col gap-1.5">
-                  <span className="t-label-sm text-ink-soft">
-                    Despre ce ai vrea să vorbiți? (opțional)
-                  </span>
-                  <textarea
-                    value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
-                    rows={2}
-                    className="t-body resize-none rounded-md border border-line-mid bg-raised px-3 py-2 text-ink outline-none focus:border-line-strong"
-                  />
-                </label>
-
-                <Button fullWidth disabled={busy} onClick={book}>
-                  {busy
-                    ? 'Se rezervă…'
-                    : `Rezervă locul de la ${zonedTime(entry.slot.startsAt, timeZone)}`}
-                </Button>
-              </div>
-            )}
-          </div>
-        )
-      })}
+      {slots.map((entry) => (
+        <BookableSlot
+          key={entry.slot.id}
+          entry={entry}
+          timeZone={timeZone}
+          title={entry.specialist.fullName}
+          tagTo={`/carti/${entry.specialist.specialistId}`}
+          chosen={chosen === entry.slot.id}
+          onChoose={setChosen}
+          onBooked={onBooked}
+        />
+      ))}
 
       {slots.length === 0 && (
         <p className="t-body m-0 text-ink-muted">Nicio întâlnire în această zi.</p>
-      )}
-
-      {error && (
-        <p className="t-body-sm m-0 text-danger" role="alert">
-          {error}
-        </p>
       )}
 
       <Link to="/carti" className="t-label text-ink no-underline">

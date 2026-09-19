@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { initialsOf } from '../lib/initials'
-import { SlotRow } from '../components/SlotRow'
+import { BookableSlot } from '../components/BookableSlot'
 import { ProfileTag } from '../components/ProfileTag'
 import { Tag } from '../components/Tag'
-import { addMonths, zonedTime, type YearMonth } from '../lib/date'
+import { addMonths, type YearMonth } from '../lib/date'
 import { dayMonthLabel, zonedDayKey, weekdayLongFromKey } from '../lib/date'
 import { useBooks } from '../lib/useBooks'
 import { useMonthBoard, type DaySlot } from '../lib/useMonthBoard'
@@ -17,6 +17,8 @@ function thisMonth(): YearMonth {
 export function CartePage() {
   const { specialistId = '' } = useParams()
   const books = useBooks()
+  // Which slot is open for booking. One at a time, like the calendar's day panel.
+  const [chosen, setChosen] = useState<string | null>(null)
   // Pinned once per mount. Reading the clock during render makes "upcoming"
   // shift under the user on every unrelated re-render.
   const [now] = useState(() => Date.now())
@@ -104,25 +106,29 @@ export function CartePage() {
             upcoming.slice(0, 6).map(({ entry, timeZone }) => {
               const key = zonedDayKey(entry.slot.startsAt, timeZone)
               return (
-                <SlotRow
+                <BookableSlot
                   key={entry.slot.id}
-                  time={zonedTime(entry.slot.startsAt, timeZone)}
-                  duration={`${entry.minutes} min`}
+                  entry={entry}
+                  timeZone={timeZone}
                   // On a book's own page the name and tag are already in the
                   // header above, so the row shows the date instead.
                   title={`${weekdayLongFromKey(key)}, ${dayMonthLabel(key)}`}
-                  category={entry.category}
                   showTag={false}
-                  state={
-                    entry.slot.isMine ? 'al-tau' : entry.slot.isAvailable ? 'liber' : 'ocupat'
-                  }
+                  // Same reason: the story is two paragraphs up this page.
+                  showBio={false}
+                  chosen={chosen === entry.slot.id}
+                  onChoose={setChosen}
+                  onBooked={() => {
+                    current.refresh()
+                    next.refresh()
+                  }}
                 />
               )
             })
           )}
 
-          <Link to="/" className="t-label text-ink no-underline">
-            Rezervă din calendar
+          <Link to="/" className="t-label text-ink-muted no-underline">
+            Vezi calendarul complet
           </Link>
         </aside>
       </div>

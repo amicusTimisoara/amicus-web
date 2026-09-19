@@ -4,7 +4,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import { Button, ButtonLink } from '../components/Button'
 import { Tag } from '../components/Tag'
 import { ApiError, api, type BookingDetail } from '../lib/api'
-import { toCategory } from '../lib/categories'
+import { fromServerCategory, toCategory } from '../lib/categories'
 import { cx } from '../lib/cx'
 import {
   dayMonthLabel,
@@ -171,7 +171,10 @@ function BookingCard({
 
       <div className="flex items-center gap-3">
         <span className="t-h2 text-ink">{booking.specialistName}</span>
-        <Tag category={toCategory(booking.specialty)} />
+        {/* The server's category wins here too. Guessing from the free-text
+            specialty made a booking with a „carte” tagged SOCIAL everywhere
+            else show up as SPIRITUAL on this page. */}
+        <Tag category={fromServerCategory(booking.category) ?? toCategory(booking.specialty)} />
       </div>
 
       {booking.topic && (
