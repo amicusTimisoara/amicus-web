@@ -35,43 +35,64 @@ export const CATEGORY_LABEL: Record<Category, string> = {
  */
 export const CATEGORY_CLASS: Record<
   Category,
-  { text: string; softBg: string; border: string; solidBg: string }
+  {
+    text: string
+    softBg: string
+    border: string
+    solidBg: string
+    /** A halo in the category's own colour, over the shadow that grounds it. */
+    glow: string
+    /** The same halo at touch strength, for a book you are only pointing at. */
+    glowHover: string
+  }
 > = {
   spiritual: {
     text: 'text-cat-spiritual',
     softBg: 'bg-cat-spiritual-soft',
     border: 'border-cat-spiritual',
     solidBg: 'bg-cat-spiritual',
+    glow: 'shadow-[0_4px_10px_rgba(31,27,22,0.22),0_0_22px_-2px_color-mix(in_oklab,var(--color-cat-spiritual)_55%,transparent)]',
+    glowHover: 'hover:shadow-[0_0_18px_-6px_color-mix(in_oklab,var(--color-cat-spiritual)_60%,transparent)]',
   },
   mentorat: {
     text: 'text-cat-mentorat',
     softBg: 'bg-cat-mentorat-soft',
     border: 'border-cat-mentorat',
     solidBg: 'bg-cat-mentorat',
+    glow: 'shadow-[0_4px_10px_rgba(31,27,22,0.22),0_0_22px_-2px_color-mix(in_oklab,var(--color-cat-mentorat)_55%,transparent)]',
+    glowHover: 'hover:shadow-[0_0_18px_-6px_color-mix(in_oklab,var(--color-cat-mentorat)_60%,transparent)]',
   },
   medical: {
     text: 'text-cat-medical',
     softBg: 'bg-cat-medical-soft',
     border: 'border-cat-medical',
     solidBg: 'bg-cat-medical',
+    glow: 'shadow-[0_4px_10px_rgba(31,27,22,0.22),0_0_22px_-2px_color-mix(in_oklab,var(--color-cat-medical)_55%,transparent)]',
+    glowHover: 'hover:shadow-[0_0_18px_-6px_color-mix(in_oklab,var(--color-cat-medical)_60%,transparent)]',
   },
   juridic: {
     text: 'text-cat-juridic',
     softBg: 'bg-cat-juridic-soft',
     border: 'border-cat-juridic',
     solidBg: 'bg-cat-juridic',
+    glow: 'shadow-[0_4px_10px_rgba(31,27,22,0.22),0_0_22px_-2px_color-mix(in_oklab,var(--color-cat-juridic)_55%,transparent)]',
+    glowHover: 'hover:shadow-[0_0_18px_-6px_color-mix(in_oklab,var(--color-cat-juridic)_60%,transparent)]',
   },
   cariera: {
     text: 'text-cat-cariera',
     softBg: 'bg-cat-cariera-soft',
     border: 'border-cat-cariera',
     solidBg: 'bg-cat-cariera',
+    glow: 'shadow-[0_4px_10px_rgba(31,27,22,0.22),0_0_22px_-2px_color-mix(in_oklab,var(--color-cat-cariera)_55%,transparent)]',
+    glowHover: 'hover:shadow-[0_0_18px_-6px_color-mix(in_oklab,var(--color-cat-cariera)_60%,transparent)]',
   },
   social: {
     text: 'text-cat-social',
     softBg: 'bg-cat-social-soft',
     border: 'border-cat-social',
     solidBg: 'bg-cat-social',
+    glow: 'shadow-[0_4px_10px_rgba(31,27,22,0.22),0_0_22px_-2px_color-mix(in_oklab,var(--color-cat-social)_55%,transparent)]',
+    glowHover: 'hover:shadow-[0_0_18px_-6px_color-mix(in_oklab,var(--color-cat-social)_60%,transparent)]',
   },
 }
 

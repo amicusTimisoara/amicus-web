@@ -61,14 +61,19 @@ export function Shelf({ active, onToggle }: ShelfProps) {
               style={{ width: SPINE[category].w, height: SPINE[category].h }}
               className={cx(
                 'group relative shrink-0 cursor-pointer rounded-sm border p-0',
-                'transition-[transform,opacity] duration-200 ease-out',
+                'transition-[transform,opacity,box-shadow] duration-200 ease-out',
                 'motion-reduce:transition-none',
                 'focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2',
                 'focus-visible:ring-offset-page focus-visible:outline-none',
                 style.border,
+                // The halo is the category's own colour, centred and spread,
+                // so it reads as light coming off the spine rather than a
+                // shadow cast by it. The neutral drop shadow stays underneath:
+                // without it the lifted book stops looking lifted and the glow
+                // alone reads as a sticker.
                 chosen
-                  ? cx(style.solidBg, '-translate-y-2.5 shadow-[0_4px_10px_rgba(31,27,22,0.22)]')
-                  : cx(style.softBg, 'hover:-translate-y-1'),
+                  ? cx(style.solidBg, style.glow, '-translate-y-2.5')
+                  : cx(style.softBg, style.glowHover, 'hover:-translate-y-1'),
                 // Pushed back, not hidden: the rest of the shelf still being
                 // there is what tells you a filter is on.
                 pushedBack && 'opacity-50',
