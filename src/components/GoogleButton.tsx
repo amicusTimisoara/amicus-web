@@ -92,7 +92,16 @@ export function GoogleButton() {
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div ref={ref} />
+      {/*
+        Google renders its button inside a fixed-size iframe with SQUARE corners.
+        In some browsers that iframe paints an opaque white background, so a white
+        rectangle shows around the rounded (shape: "pill") button — most visible
+        on the dark theme and on the off-white page. We can't style Google's
+        cross-origin iframe, but clipping its container to the pill radius cuts the
+        square corners away. Harmless where the iframe is already transparent.
+        w-fit so the clip hugs the button, not the full column width.
+      */}
+      <div ref={ref} className="w-fit overflow-hidden rounded-full" />
       {error && <p className="t-body-sm text-danger">{error}</p>}
       {/*
         Google emails every student the first time they use this button — "Ai
