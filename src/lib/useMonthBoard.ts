@@ -6,7 +6,7 @@ import {
   type EventSummary,
   type SpecialistSummary,
 } from './api'
-import { toCategory, type Category } from './categories'
+import { fromServerCategory, toCategory, type Category } from './categories'
 import { dateKey, daysInMonth, minutesBetween, zonedDayKey, type YearMonth } from './date'
 
 export interface DaySlot {
@@ -81,7 +81,13 @@ export function useMonthBoard(month: YearMonth): BoardState & { refresh: () => v
           const entry: DaySlot = {
             slot,
             specialist: board.specialist,
-            category: toCategory(board.specialist.specialty),
+            // The server's category wins, exactly as in `useBooks`. Guessing
+            // from the free-text specialty was left here when that was fixed,
+            // so one book could be SOCIAL in the catalogue and MENTORAT on the
+            // calendar — "Consilier antidrog" trips the `consilier` keyword.
+            category:
+              fromServerCategory(board.specialist.category) ??
+              toCategory(board.specialist.specialty),
             minutes: minutesBetween(slot.startsAt, slot.endsAt),
           }
           const existing = byDay.get(key)

@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Button, ButtonLink } from '../components/Button'
 import { DayCell, type DayMark } from '../components/DayCell'
 import { Dot } from '../components/Dot'
-import { SlotRow } from '../components/SlotRow'
-import { bookingErrorMessage, api } from '../lib/api'
+import { BookableSlot } from '../components/BookableSlot'
 import { CATEGORIES, CATEGORY_LABEL } from '../lib/categories'
 import {
   addMonths,
@@ -14,7 +13,6 @@ import {
   todayKey,
   weekdayLongFromKey,
   WEEKDAYS_SHORT_RO,
-  zonedTime,
   type YearMonth,
 } from '../lib/date'
 import { useMonthBoard, type DaySlot } from '../lib/useMonthBoard'
@@ -194,7 +192,8 @@ interface MonthGridProps {
   byDay: ReadonlyMap<string, DaySlot[]>
   timeZone: string
   selectedDay: string | null
-  onSelect: (key: string) => void
+  /** Null clears the selection — tapping the chosen day again puts it back. */
+  onSelect: (key: string | null) => void
 }
 
 function MonthGrid({ month, byDay, timeZone, selectedDay, onSelect }: MonthGridProps) {
@@ -226,7 +225,10 @@ function MonthGrid({ month, byDay, timeZone, selectedDay, onSelect }: MonthGridP
               isToday={cell.key === today}
               isSelected={cell.key === selectedDay}
               marks={marks}
-              onSelect={() => onSelect(cell.key)}
+              // Tapping the chosen day again clears it. Without this a day
+              // could be picked but never put back, so the only way out of the
+              // panel was to change month and come back.
+              onSelect={() => onSelect(cell.key === selectedDay ? null : cell.key)}
             />
           )
         })}
@@ -271,11 +273,8 @@ interface DayPanelProps {
 }
 
 function DayPanel({ dayKey, slots, timeZone, onBooked }: DayPanelProps) {
-  const navigate = useNavigate()
+  // Which slot is open, and nothing else — booking itself lives in BookableSlot.
   const [chosen, setChosen] = useState<string | null>(null)
-  const [topic, setTopic] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   if (!dayKey) {
     return (
@@ -288,26 +287,6 @@ function DayPanel({ dayKey, slots, timeZone, onBooked }: DayPanelProps) {
   }
 
   const free = slots.filter((s) => s.slot.isAvailable).length
-  const chosenSlot = slots.find((s) => s.slot.id === chosen)
-
-  async function book() {
-    if (!chosenSlot) return
-    setBusy(true)
-    setError(null)
-    try {
-      const booking = await api.createBooking(chosenSlot.slot.id, topic)
-      onBooked()
-      navigate(`/rezervarile-mele?noua=${booking.id}`)
-    } catch (err) {
-      // A lost race is not really an error the student caused — refresh the
-      // board underneath them so the slot they lost stops looking available.
-      setError(bookingErrorMessage(err))
-      setChosen(null)
-      onBooked()
-    } finally {
-      setBusy(false)
-    }
-  }
 
   return (
     <aside className="flex flex-col gap-4 rounded-xl border border-line bg-raised p-7">
@@ -318,74 +297,21 @@ function DayPanel({ dayKey, slots, timeZone, onBooked }: DayPanelProps) {
         {free === 0 ? 'niciun loc liber' : free === 1 ? 'un loc liber' : `${free} locuri libere`}
       </p>
 
-      {slots.map((entry) => {
-        const state = entry.slot.isMine
-          ? 'al-tau'
-          : entry.slot.isAvailable
-            ? 'liber'
-            : 'ocupat'
-        return (
-          <div key={entry.slot.id} className="flex flex-col gap-3">
-            <SlotRow
-              time={zonedTime(entry.slot.startsAt, timeZone)}
-              duration={`${entry.minutes} min`}
-              title={entry.specialist.fullName}
-              category={entry.category}
-              tagTo={`/carti/${entry.specialist.specialistId}`}
-              state={state}
-              selected={chosen === entry.slot.id}
-              onSelect={
-                state === 'liber'
-                  ? () => {
-                      setChosen((c) => (c === entry.slot.id ? null : entry.slot.id))
-                      setError(null)
-                    }
-                  : undefined
-              }
-            />
-
-            {chosen === entry.slot.id && (
-              <div className="flex flex-col gap-3 rounded-lg bg-sunken p-4">
-                {entry.specialist.bio && (
-                  <p className="t-body m-0 text-ink-soft">{entry.specialist.bio}</p>
-                )}
-                {entry.specialist.location && (
-                  <p className="t-body-sm m-0 text-ink-muted">
-                    {entry.specialist.location} · {entry.minutes} de minute
-                  </p>
-                )}
-
-                <label className="flex flex-col gap-1.5">
-                  <span className="t-label-sm text-ink-soft">
-                    Despre ce ai vrea să vorbiți? (opțional)
-                  </span>
-                  <textarea
-                    value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
-                    rows={2}
-                    className="t-body resize-none rounded-md border border-line-mid bg-raised px-3 py-2 text-ink outline-none focus:border-line-strong"
-                  />
-                </label>
-
-                <Button fullWidth disabled={busy} onClick={book}>
-                  {busy
-                    ? 'Se rezervă…'
-                    : `Rezervă locul de la ${zonedTime(entry.slot.startsAt, timeZone)}`}
-                </Button>
-              </div>
-            )}
-          </div>
-        )
-      })}
+      {slots.map((entry) => (
+        <BookableSlot
+          key={entry.slot.id}
+          entry={entry}
+          timeZone={timeZone}
+          title={entry.specialist.fullName}
+          tagTo={`/carti/${entry.specialist.specialistId}`}
+          chosen={chosen === entry.slot.id}
+          onChoose={setChosen}
+          onBooked={onBooked}
+        />
+      ))}
 
       {slots.length === 0 && (
         <p className="t-body m-0 text-ink-muted">Nicio întâlnire în această zi.</p>
-      )}
-
-      {error && (
-        <p className="t-body-sm m-0 text-danger" role="alert">
-          {error}
-        </p>
       )}
 
       <Link to="/carti" className="t-label text-ink no-underline">
