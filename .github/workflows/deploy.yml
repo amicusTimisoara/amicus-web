@@ -36,15 +36,24 @@ jobs:
 
       # Decide the target once. Release (or a manual production run) is the only
       # thing that touches prod; everything else is staging/preview on the stage API.
+      # Event values reach the script only through env, never as ${{ }} inside it:
+      # a PR's branch name is attacker-chosen text and would run as shell code.
       - name: Resolve target
         id: t
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+          HEAD_REF: ${{ github.head_ref }}
         run: |
-          if [ "${{ github.event_name }}" = "release" ] || [ "${{ inputs.environment }}" = "production" ]; then
+          if [ "$EVENT_NAME" = "release" ] || [ "$INPUT_ENVIRONMENT" = "production" ]; then
             echo "branch=production"        >> "$GITHUB_OUTPUT"
             echo "api=https://api.thorsp.net" >> "$GITHUB_OUTPUT"
             echo "google=695044425932-id1oe3r50825d02o4pjrijeuj3fc6qma.apps.googleusercontent.com" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "branch=${{ github.head_ref }}" >> "$GITHUB_OUTPUT"
+          elif [ "$EVENT_NAME" = "pull_request" ]; then
+            # The branch also lands in wrangler's argv below, so keep only characters
+            # a branch alias can use; Cloudflare turns the rest into '-' anyway.
+            branch="$(printf '%s' "$HEAD_REF" | tr -c 'A-Za-z0-9._/-' '-')"
+            echo "branch=$branch" >> "$GITHUB_OUTPUT"
             echo "api=https://stage.thorsp.net"  >> "$GITHUB_OUTPUT"
             echo "google=" >> "$GITHUB_OUTPUT"
           else
@@ -77,13 +86,16 @@ jobs:
       - name: Comment preview URL on the PR
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
+        env:
+          BRANCH_URL: ${{ steps.cf.outputs.pages-deployment-alias-url }}
+          COMMIT_URL: ${{ steps.cf.outputs.deployment-url }}
         with:
           script: |
             // Cloudflare's own Git integration posts a comment with a branch link
             // (always latest) and a per-deployment link (this exact commit). We
             // deploy by direct upload, so reproduce both from wrangler's outputs.
-            const branchUrl = ${{ toJSON(steps.cf.outputs.pages-deployment-alias-url) }};
-            const commitUrl = ${{ toJSON(steps.cf.outputs.deployment-url) }};
+            const branchUrl = process.env.BRANCH_URL;
+            const commitUrl = process.env.COMMIT_URL;
             // On a PR, context.sha is the synthetic merge commit; show the real head sha.
             const sha = (context.payload.pull_request?.head?.sha || context.sha).slice(0, 7);
             const marker = '<!-- amicus-preview -->';
